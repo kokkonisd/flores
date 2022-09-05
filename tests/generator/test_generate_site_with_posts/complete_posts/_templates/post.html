@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{ page.title }} - the blog</title>
+    </head>
+    <body>
+        <h1>{{ page.title }}</h1>
+        <p>
+            Written on {{ page.date.day_name }}, {{ page.date.month_name }} {{ page.date.day }},
+            {{ page.date.year }}
+            {%- if page.weather %}
+                (it was {{ page.weather }})
+            {%- endif %}
+        </p>
+        <p>Categories: {{ page.categories | join(", ") }}</p>
+        <p>Tags: {{ page.tags | join(", ") }}</p>
+
+        {{ page.content }}
+    </body>
+</html>

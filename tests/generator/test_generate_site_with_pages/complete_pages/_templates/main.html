@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        {{ page.content }}
+
+        {%- if page.fruits %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fruit</th>
+                        <th>Do I like it?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%- for fruit in page.fruits %}
+                        <tr>
+                            <td>{{ fruit.name }}</td>
+                            <td>{{ "Yes" if fruit.like else "No" }}</td>
+                        </tr>
+                    {%- endfor %}
+                </tbody>
+            </table>
+        {%- endif %}
+    </body>
+</html>

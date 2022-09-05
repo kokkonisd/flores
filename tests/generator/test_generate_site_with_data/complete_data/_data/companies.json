@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Foo Corp.",
+        "year_range": "1982-1987"
+    },
+    {
+        "name": "Bar Unltd.",
+        "year_range": "1987-1989"
+    },
+    {
+        "name": "Boo Bar Baz Inc.",
+        "year_range": "1989-today"
+    }
+]

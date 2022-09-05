@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        {%- for script in page.scripts %}
+            <script src="js/{{ script }}"></script>
+        {%- endfor %}
+    </body>
+</html>

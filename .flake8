@@ -1,0 +1,31 @@
+[flake8]
+
+exclude = .git,__pycache__,build,dist,.nox,*.egg-info
+filename = *.py
+# Black sets the maximum line length to 88, so we'll use that.
+max-line-length = 88
+extend-ignore =
+    # Ignore the "whitespace before ':'" error as it is not PEP8 compliant.
+    # See https://github.com/psf/black/issues/315.
+    E203,
+    # Ignore the "do not call getattr with literal attr" error, as we have to do it to
+    # work around mypy not tracking private attribute name mangling.
+    B009
+
+per-file-ignores =
+    # No need to have module/package-level docstrings for tests.
+    tests/*:D100,D104
+    # No need to have a module-level docstring for the noxfile.
+    noxfile.py:D100
+    # No need to have a module-level docstring for setup.py.
+    setup.py:D100
+
+# pep8-naming is right, but this comes from flores.server.FloresHTTPRequestHandler; we
+# cannot change that method's name, because it is inherited from
+# http.server.SimpleHTTPRequestHandler.
+ignore-names = do_GET
+
+# flake8-requirements gets lost between libsass (the PyPI package name) and sass (the
+# name of the module to import in the code).
+known-modules = libsass:[sass]
+

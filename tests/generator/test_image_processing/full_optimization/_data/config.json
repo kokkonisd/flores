@@ -1,0 +1,19 @@
+{
+    "images": [
+        {
+            "size": 0.33,
+            "suffix": "-small",
+            "optimize": true
+        },
+        {
+            "size": 0.5,
+            "suffix": "-medium",
+            "optimize": true
+        },
+        {
+            "size": 1,
+            "suffix": "-large",
+            "optimize": true
+        }
+    ]
+}

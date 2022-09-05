@@ -1,0 +1,13 @@
+@import "includes/palette";
+
+a {
+    color: $MAIN_LINK_COLOR;
+
+    &:hover {
+        color: $HOVER_LINK_COLOR;
+    }
+
+    &:active {
+        color: $ACTIVE_LINK_COLOR;
+    }
+}

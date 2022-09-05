@@ -1,0 +1,11 @@
+{
+    "images": [
+        {
+            "size": 0.45,
+            "suffix": "-a",
+            "optimize": false,
+            "foo": 1,
+            "bar": 2
+        }
+    ]
+}

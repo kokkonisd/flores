@@ -1,0 +1,3 @@
+---
+template: does-not-exist
+---
