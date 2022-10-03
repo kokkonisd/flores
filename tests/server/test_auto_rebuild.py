@@ -38,7 +38,7 @@ def test_auto_rebuild_page(flores_server: Server) -> None:
         index_file.write("\n\nHello!")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_index_content = "\n".join(
         [
@@ -89,7 +89,7 @@ def test_auto_rebuild_template(flores_server: Server) -> None:
         index_file.write("{{ page.content }}")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_index_content = "<p>This is the index page.</p>"
     index_request = requests.get(f"http://localhost:{flores_server.port}")
@@ -129,7 +129,7 @@ def test_auto_rebuild_post(flores_server: Server) -> None:
         post_file.write("\n\nHello!")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_post_content = "\n".join(
         [
@@ -172,7 +172,7 @@ def test_auto_rebuild_asset(flores_server: Server) -> None:
         asset_file.write("This has changed!")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_asset_content = "This has changed!"
     asset_request = requests.get(
@@ -214,7 +214,7 @@ def test_auto_rebuild_draft(flores_server: Server) -> None:
         draft_file.write("\n\nHello!")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_draft_content = "\n".join(
         [
@@ -262,7 +262,7 @@ def test_auto_rebuild_css(flores_server: Server) -> None:
         css_file.write("\na{background-color: yellow;}")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_css_content = "\n".join(
         [
@@ -296,7 +296,7 @@ def test_auto_rebuild_js(flores_server: Server) -> None:
         js_file.write('console.log("Goodbye");')
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_js_content = 'console.log("Hello");\nconsole.log("Goodbye");'
     js_request = requests.get(f"http://localhost:{flores_server.port}/js/main.js")
@@ -336,7 +336,7 @@ def test_auto_rebuild_data(flores_server: Server) -> None:
         index_file.write(json.dumps(config))
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     expected_index_content = "\n".join(
         [
@@ -386,7 +386,7 @@ def test_failed_auto_rebuild(flores_server: Server) -> None:
         index_file.write("Whoops!")
 
     # Wait for the rebuild.
-    time.sleep(0.6)
+    time.sleep(1)
 
     # We should get a 404 when trying to reload the page, as the server has nothing to
     # serve (unsuccessful build).
