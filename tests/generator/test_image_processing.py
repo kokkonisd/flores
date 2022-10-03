@@ -168,7 +168,9 @@ def test_optimize_invalid_image(test_data_dir: str) -> None:
 
     with pytest.raises(
         ImageError,
-        match=f"{invalid_image}: Cannot identify image file '{invalid_image}'.",
+        match=re.escape(
+            f"{invalid_image}: Cannot identify image file '{invalid_image}'."
+        ),
     ):
         generator.build()
 
