@@ -1,9 +1,9 @@
+import logging
 import multiprocessing
 import os
 import signal
 import time
 import typing
-import logging
 
 import pytest
 import pytest_cov
@@ -50,8 +50,10 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
     # that use this fixture, we can replace it here by default loggers to make sure that
     # the final Server and Generator objects are pickleable. This will allow us to use
     # "spawn".
-    server._Server__log = logging.getLogger(f"{request.node.name}-server")
-    server.generator._Generator__log = logging.getLogger(
+    server._Server__log = logging.getLogger(  # type: ignore
+        f"{request.node.name}-server"
+    )
+    server.generator._Generator__log = logging.getLogger(  # type: ignore
         f"{request.node.name}-generator"
     )
     multiprocessing_context = multiprocessing.get_context("spawn")
