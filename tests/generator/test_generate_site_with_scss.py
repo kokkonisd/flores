@@ -19,7 +19,7 @@ def test_generate_site_with_scss(test_data_dir: str) -> None:
         actual_site_main = file.read().strip()
     with open(os.path.join(generator.css_build_dir, "blog", "main.css"), "r") as file:
         actual_blog_main = file.read().strip()
-    with open(os.path.join(generator.css_build_dir, "blog", "aux.css"), "r") as file:
+    with open(os.path.join(generator.css_build_dir, "blog", "other.css"), "r") as file:
         actual_blog_aux = file.read().strip()
 
     assert actual_site_main == expected_site_main
