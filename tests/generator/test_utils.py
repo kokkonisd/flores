@@ -128,6 +128,7 @@ def test_element_collection(test_data_dir: str) -> None:
         os.path.join(test_data_dir, "two", "two.txt"),
         os.path.join(test_data_dir, "three"),
         os.path.join(test_data_dir, "three", "four"),
+        os.path.join(test_data_dir, "three", "four", ".gitkeep"),
         os.path.join(test_data_dir, ".test"),
         os.path.join(test_data_dir, "frontmatter"),
         os.path.join(test_data_dir, "frontmatter", "empty.md"),
@@ -141,6 +142,7 @@ def test_element_collection(test_data_dir: str) -> None:
     all_files_expected = [
         os.path.join(test_data_dir, "one.txt"),
         os.path.join(test_data_dir, "two", "two.txt"),
+        os.path.join(test_data_dir, "three", "four", ".gitkeep"),
         os.path.join(test_data_dir, ".test"),
         os.path.join(test_data_dir, "frontmatter", "empty.md"),
         os.path.join(test_data_dir, "frontmatter", "ok.md"),
@@ -170,7 +172,10 @@ def test_element_collection(test_data_dir: str) -> None:
     all_hidden_files = collect(
         test_data_dir, prefixes=["."], files_only=True, recursive=True
     )
-    all_hidden_files_expected = [os.path.join(test_data_dir, ".test")]
+    all_hidden_files_expected = [
+        os.path.join(test_data_dir, ".test"),
+        os.path.join(test_data_dir, "three", "four", ".gitkeep"),
+    ]
     assert sorted(all_hidden_files) == sorted(all_hidden_files_expected)
 
     all_hidden_text_files = collect(
