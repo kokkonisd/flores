@@ -60,8 +60,10 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
     server_process = multiprocessing_context.Process(target=server.serve, kwargs=kwargs)
 
     server_process.start()
-    # Give some time to the server to start.
-    time.sleep(1)
+    # Give some time to the server to start. Since some CIs may be slow (like macOS on
+    # GitHub), we overshoot the mark here by quite a bit probably; however, we get
+    # stable results.
+    time.sleep(2)
 
     yield server
 
