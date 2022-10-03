@@ -59,7 +59,7 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
 
     server_process.start()
     # Give some time to the server to start.
-    time.sleep(0.5)
+    time.sleep(1)
 
     yield server
 
