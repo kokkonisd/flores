@@ -184,7 +184,7 @@ def test_invalid_config_extra_keys(test_data_dir: str) -> None:
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Unexpected keys 'foo, bar' in element "
             "'{'size': 0.45, 'suffix': '-a', 'optimize': False, 'foo': 1, 'bar': 2}' "
             "in key 'images'."
@@ -205,7 +205,7 @@ def test_invalid_config_images_key_wrong_type(test_data_dir: str) -> None:
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Expected type 'list' but got 'dict' for key "
             "'images'."
         ),
@@ -224,7 +224,7 @@ def test_invalid_config_optimize_key_missing(test_data_dir: str) -> None:
 
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Missing key 'optimize' in element "
             "'{'size': 1, 'suffix': '-raw'}' in key 'images'."
         ),
@@ -244,7 +244,7 @@ def test_invalid_config_optimize_key_wrong_type(test_data_dir: str) -> None:
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Expected type 'bool' but got 'str' for key "
             "'optimize' in element '{'size': 1, 'suffix': '', 'optimize': 'yes'}' in "
             "key 'images'."
@@ -264,7 +264,7 @@ def test_invalid_config_size_key_missing(test_data_dir: str) -> None:
 
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Missing key 'size' in element "
             "'{'suffix': '', 'optimize': True}' in key 'images'."
         ),
@@ -304,7 +304,7 @@ def test_invalid_config_size_key_wrong_type(test_data_dir: str) -> None:
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Expected type 'float' or 'int' but got 'str' "
             "for key 'size' in element "
             "'{'size': '100%', 'suffix': '', 'optimize': True}' in key 'images'."
@@ -324,7 +324,7 @@ def test_invalid_config_suffix_key_missing(test_data_dir: str) -> None:
 
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Missing key 'suffix' in element "
             "'{'size': 1, 'optimize': False}' in key 'images'."
         ),
@@ -344,7 +344,7 @@ def test_invalid_config_suffix_key_wrong_type(test_data_dir: str) -> None:
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Expected type 'str' but got 'int' for key "
             "'suffix' in element '{'size': 1, 'suffix': 0, 'optimize': False}' in "
             "key 'images'."

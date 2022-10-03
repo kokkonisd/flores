@@ -1,4 +1,5 @@
 import os
+import re
 
 import pytest
 
@@ -53,7 +54,7 @@ def test_page_missing_template(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "missing_template"))
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.pages_dir, 'missing-template.md')}: Missing "
             "'template' key in frontmatter."
         ),
@@ -70,7 +71,7 @@ def test_page_wrong_type_for_template(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_template"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.pages_dir, 'wrong-type-for-template.md')}: "
             "Expected type 'str' but got 'int' for key 'template'."
         ),

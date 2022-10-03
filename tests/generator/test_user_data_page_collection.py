@@ -1,4 +1,5 @@
 import os
+import re
 
 import pytest
 
@@ -67,7 +68,7 @@ def test_page_missing_template(test_data_dir: str) -> None:
     )
     with pytest.raises(
         Exception,
-        match=f"{page}: Missing 'template' key in frontmatter.",
+        match=re.escape(f"{page}: Missing 'template' key in frontmatter."),
     ):
         generator.collect_user_data_pages()
 
@@ -86,6 +87,8 @@ def test_page_wrong_type_for_template(test_data_dir: str) -> None:
     )
     with pytest.raises(
         TypeError,
-        match=f"{page}: Expected type 'str' but got 'int' for key 'template'.",
+        match=re.escape(
+            f"{page}: Expected type 'str' but got 'int' for key 'template'."
+        ),
     ):
         generator.collect_user_data_pages()

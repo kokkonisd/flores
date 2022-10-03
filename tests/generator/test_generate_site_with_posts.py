@@ -17,7 +17,7 @@ def test_generate_posts_with_template_errors(test_data_dir: str) -> None:
 
     with pytest.raises(
         TemplateError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '1970-01-01-hello.md')}: 'data' is "
             "undefined."
         ),
@@ -54,7 +54,7 @@ def test_generate_site_with_posts_missing_template(test_data_dir: str) -> None:
 
     with pytest.raises(
         FileOrDirNotFoundError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-12-post.md')}: Template "
             f"'what-template' not found in {generator.templates_dir}."
         ),

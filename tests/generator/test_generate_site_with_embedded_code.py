@@ -18,7 +18,7 @@ def test_generate_site_with_embedded_code_invalid_style(test_data_dir: str) -> N
 
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{generator.config_file}: Expected type 'str' but got 'int' for key "
             "'pygments_style'."
         ),

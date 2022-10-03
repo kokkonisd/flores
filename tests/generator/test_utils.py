@@ -25,7 +25,7 @@ def test_failing_with_general_error_code() -> None:
     fail = getattr(generator, "_Generator__fail")
     fail_message = "This should fail."
 
-    with pytest.raises(FloresError, match=fail_message):
+    with pytest.raises(FloresError, match=re.escape(fail_message)):
         fail(fail_message, exit_code=FloresErrorCode.GENERAL_ERROR)
 
 
@@ -36,7 +36,8 @@ def test_generator_with_invalid_dir() -> None:
     """
     bogus_dir = "this-is-totaly_not-a-legit-dir"
     with pytest.raises(
-        FileOrDirNotFoundError, match=f"Invalid project directory: '{bogus_dir}'."
+        FileOrDirNotFoundError,
+        match=re.escape(f"Invalid project directory: '{bogus_dir}'."),
     ):
         Generator(bogus_dir)
 
@@ -56,7 +57,7 @@ def test_frontmatter_parsing(test_data_dir: str) -> None:
 
     # Frontmatter must always be there, even if it is empty.
     with pytest.raises(
-        MissingElementError, match=f"{empty_file}: Missing frontmatter."
+        MissingElementError, match=re.escape(f"{empty_file}: Missing frontmatter.")
     ):
         parse(empty_file)
 
@@ -110,14 +111,16 @@ def test_element_collection(test_data_dir: str) -> None:
     # Check that we can't pass mutually exclusive arguments.
     with pytest.raises(
         AssertionError,
-        match=r"The arguments 'files_only' and 'dirs_only' are mutually exclusive.",
+        match=re.escape(
+            "The arguments 'files_only' and 'dirs_only' are mutually exclusive."
+        ),
     ):
         collect(test_data_dir, files_only=True, dirs_only=True)
 
     # Check that it raises an error when provided with an invalid directory.
     fake_dir = os.path.join("yep", "this", "dir", "totally", "exists")
     with pytest.raises(
-        FileOrDirNotFoundError, match=f"No such directory: '{fake_dir}'."
+        FileOrDirNotFoundError, match=re.escape(f"No such directory: '{fake_dir}'.")
     ):
         collect(fake_dir)
 

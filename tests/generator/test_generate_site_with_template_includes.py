@@ -17,7 +17,7 @@ def test_template_errors(test_data_dir: str) -> None:
 
     with pytest.raises(
         TemplateError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.templates_dir, 'main.html')}:4: unexpected '}}'."
         ),
     ):

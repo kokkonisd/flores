@@ -17,7 +17,7 @@ def test_generate_user_data_pages_with_template_errors(test_data_dir: str) -> No
 
     with pytest.raises(
         TemplateError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.project_dir, '_mypages', 'my-first-page.md')}: "
             "'site_owner' is undefined."
         ),

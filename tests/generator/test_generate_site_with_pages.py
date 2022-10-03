@@ -17,7 +17,9 @@ def test_generate_pages_with_template_errors(test_data_dir: str) -> None:
 
     with pytest.raises(
         TemplateError,
-        match=f"{os.path.join(generator.pages_dir, 'index.md')}: 'user' is undefined.",
+        match=re.escape(
+            f"{os.path.join(generator.pages_dir, 'index.md')}: 'user' is undefined."
+        ),
     ):
         generator.build()
 
@@ -51,7 +53,7 @@ def test_generate_site_with_pages_missing_template(test_data_dir: str) -> None:
 
     with pytest.raises(
         FileOrDirNotFoundError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.pages_dir, 'index.md')}: Template "
             f"'what-template' not found in {generator.templates_dir}."
         ),

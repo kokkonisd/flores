@@ -121,7 +121,7 @@ def test_post_incorrect_form(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "incorrect_form"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '20220904-post1.md')}: Post files "
             "should be of the form 'YYYY-MM-DD-post-title-here'."
         ),
@@ -137,7 +137,7 @@ def test_post_missing_template(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "missing_template"))
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Missing "
             "'template' key in frontmatter."
         ),
@@ -153,7 +153,7 @@ def test_post_missing_title(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "missing_title"))
     with pytest.raises(
         MissingElementError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Missing "
             "'title' key in frontmatter."
         ),
@@ -169,7 +169,7 @@ def test_post_wrong_type_for_template(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_template"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'str' but got 'list' for key 'template'."
         ),
@@ -185,7 +185,7 @@ def test_post_wrong_type_for_title(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_title"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'str' but got 'dict' for key 'title'."
         ),
@@ -201,7 +201,7 @@ def test_post_wrong_type_for_categories(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_categories"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'list' but got 'int' for key 'categories'."
         ),
@@ -236,7 +236,7 @@ def test_post_wrong_type_for_tags(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_tags"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'list' but got 'int' for key 'tags'."
         ),
@@ -253,7 +253,7 @@ def test_post_wrong_type_for_tag_element(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_tag_element"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'str' but got 'dict' for tag '{'foo': 'bar'}'."
         ),
@@ -269,7 +269,7 @@ def test_post_wrong_type_for_date_string(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "wrong_type_for_date_string"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
             "type 'str' but got 'int' for key 'date'."
         ),
@@ -302,7 +302,7 @@ def test_post_date_mismatch_year(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "date_mismatch_year"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
             "Year mismatch; '2009' in the filename, but '2010' in the file."
         ),
@@ -319,7 +319,7 @@ def test_post_date_mismatch_month(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "date_mismatch_month"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
             "Month mismatch; '10' in the filename, but '01' in the file."
         ),
@@ -336,7 +336,7 @@ def test_post_date_mismatch_day(test_data_dir: str) -> None:
     generator = Generator(os.path.join(test_data_dir, "date_mismatch_day"))
     with pytest.raises(
         WrongTypeOrFormatError,
-        match=(
+        match=re.escape(
             f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
             "Day mismatch; '11' in the filename, but '02' in the file."
         ),
