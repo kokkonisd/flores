@@ -1040,8 +1040,10 @@ class Generator:
             try:
                 date = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S %z")
             except ValueError as e:
+                error_message = str(e).rstrip(".")
+                error_message = error_message[0].upper() + error_message[1:]
                 self.__fail(
-                    f"{post_file}: {str(e).capitalize()}.",
+                    f"{post_file}: {error_message}.",
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                 )
 
@@ -1306,8 +1308,10 @@ class Generator:
                 try:
                     source_image = Image.open(source_file)
                 except Exception as e:
+                    error_message = str(e).rstrip(".")
+                    error_message = error_message[0].upper() + error_message[1:]
                     self.__fail(
-                        f"{source_file}: {str(e).capitalize().rstrip('.')}.",
+                        f"{source_file}: {error_message}.",
                         exit_code=FloresErrorCode.IMAGE_ERROR,
                     )
 

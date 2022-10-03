@@ -287,7 +287,7 @@ def test_post_wrong_format_for_date_string(test_data_dir: str) -> None:
         WrongTypeOrFormatError,
         match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Time data "
-            "'2022/09/04 10:11:12 +0100' does not match format '%y-%m-%d %h:%m:%s %z'."
+            "'2022/09/04 10:11:12 +0100' does not match format '%Y-%m-%d %H:%M:%S %z'."
         ),
     ):
         generator.collect_posts(include_drafts=False)
