@@ -3,6 +3,7 @@ import os
 import signal
 import time
 import typing
+import logging
 
 import pytest
 import pytest_cov
@@ -42,7 +43,19 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
     # See https://pytest-cov.readthedocs.io/en/latest/subprocess-support.html\
     #     if-you-use-multiprocessing-process.
     pytest_cov.embed.cleanup_on_sigterm()
-    server_process = multiprocessing.Process(target=server.serve, kwargs=kwargs)
+
+    # Use the "spawn" method for processes, to ensure that it is the same across all
+    # platforms (see `multiprocessing`'s docs).
+    # However, Flores' logger is not picklable; since logging is disregarded in tests
+    # that use this fixture, we can replace it here by default loggers to make sure that
+    # the final Server and Generator objects are pickleable. This will allow us to use
+    # "spawn".
+    server._Server__log = logging.getLogger(f"{request.node.name}-server")
+    server.generator._Generator__log = logging.getLogger(
+        f"{request.node.name}-generator"
+    )
+    multiprocessing_context = multiprocessing.get_context("spawn")
+    server_process = multiprocessing_context.Process(target=server.serve, kwargs=kwargs)
 
     server_process.start()
     # Give some time to the server to start.
