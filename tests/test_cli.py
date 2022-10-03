@@ -37,7 +37,7 @@ def test_cli_serve(flores_cli, test_data_dir):
     server = flores_cli.runserver(test_data_dir, "-p", "8000")
 
     # Wait for the server to start.
-    time.sleep(0.5)
+    time.sleep(1)
 
     index_request = requests.get("http://localhost:8000")
     assert index_request.status_code == 200
@@ -59,11 +59,11 @@ def test_cli_run_double_server(flores_cli, test_data_dir):
     """Test a double call to `serve` with overlapping ports."""
     server1 = flores_cli.runserver(test_data_dir, "-p", "8000")
     # Wait for the first server to start.
-    time.sleep(0.5)
+    time.sleep(1)
 
     server2 = flores_cli.runserver(test_data_dir, "-p", "8000")
     # Wait for the second server to start.
-    time.sleep(0.5)
+    time.sleep(1)
 
     # A server should be up.
     index_request = requests.get("http://localhost:8000")
