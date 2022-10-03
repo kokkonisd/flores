@@ -18,9 +18,9 @@ def test_generate_site_with_js(test_data_dir: str) -> None:
         os.path.join(generator.build_dir, "js"),
         os.path.join(generator.build_dir, "js", "site"),
         os.path.join(generator.build_dir, "js", "site", "main"),
-        os.path.join(generator.build_dir, "js", "site", "aux"),
+        os.path.join(generator.build_dir, "js", "site", "other"),
         os.path.join(generator.build_dir, "js", "site", "main", "main.js"),
-        os.path.join(generator.build_dir, "js", "site", "aux", "stuff.js"),
+        os.path.join(generator.build_dir, "js", "site", "other", "stuff.js"),
         os.path.join(generator.build_dir, "js", "blog"),
         os.path.join(generator.build_dir, "js", "blog", "tracker.js"),
     ]
