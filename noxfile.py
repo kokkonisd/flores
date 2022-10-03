@@ -1,12 +1,5 @@
 import nox
 
-TEST_DEPS = [
-    ("pytest", "7.1.2"),
-    ("pytest-cov", "3.0.0"),
-    ("requests", "2.28.1"),
-]
-
-
 MAIN_PYTHON_VERSION = "3.9"
 SUPPORTED_PYTHON_VERSIONS = [MAIN_PYTHON_VERSION, "3.10"]
 
@@ -17,8 +10,7 @@ def tests(session: nox.Session) -> None:
     # Install the runtime requirements.
     session.install("-r", "requirements.txt")
     # Install the test dependencies.
-    for dep, version in TEST_DEPS:
-        session.install(f"{dep}=={version}")
+    session.install("-r", "requirements-test.txt")
     # Install saul itself.
     session.install("-e", ".")
 
