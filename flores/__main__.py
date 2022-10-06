@@ -3,6 +3,7 @@
 import argparse
 import logging
 
+from flores import __version__
 from flores.generator import Generator
 from flores.server import Server
 
@@ -77,6 +78,13 @@ def main() -> None:
     """Parse command-line arguments and run Flores."""
     parser = argparse.ArgumentParser(description="Build/serve a static site.")
     parser.set_defaults(func=None)
+    parser.add_argument(
+        "--version",
+        help="Show the version of Flores.",
+        action="version",
+        version=f"flores, version {__version__}",
+    )
+
     subparsers = parser.add_subparsers()
 
     build_subparser = subparsers.add_parser("build", help="Build the static site.")
