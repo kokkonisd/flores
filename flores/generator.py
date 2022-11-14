@@ -80,7 +80,8 @@ class Post(TypedDict):
 
     :ivar template: the Jinja (HTML) template to use for the post.
     :ivar title: the title of the post.
-    :ivar date: the date the post was written on.
+    :ivar date: the date the post was written on (see
+        :class:`flores.generator.PostDateInfo`).
     :ivar categories: categories associated with the post.
     :ivar tags: tags associated with the post.
     :ivar content: the actual content of the post.
