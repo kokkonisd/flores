@@ -1,5 +1,6 @@
-import nox
 import shutil
+
+import nox
 
 MAIN_PYTHON_VERSION = "3.9"
 SUPPORTED_PYTHON_VERSIONS = [MAIN_PYTHON_VERSION, "3.10"]
