@@ -33,3 +33,12 @@ def lint(session: nox.Session) -> None:
     session.install("-r", "requirements-dev.txt")
     # Run pre-commit.
     session.run("pre-commit", "run", "--all-files")
+
+
+@nox.session(python=SUPPORTED_PYTHON_VERSIONS)
+def docs(session: nox.Session) -> None:
+    """Build the documentation."""
+    # Install the documentation requirements.
+    session.install("-r", "requirements-docs.txt")
+    # Build the documentation.
+    session.run("sphinx-build", "-b", "html", "docs/", "docs/_build/")
