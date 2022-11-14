@@ -80,7 +80,8 @@ class Post(TypedDict):
 
     :ivar template: the Jinja (HTML) template to use for the post.
     :ivar title: the title of the post.
-    :ivar date: the date the post was written on.
+    :ivar date: the date the post was written on (see
+        :class:`flores.generator.PostDateInfo`).
     :ivar categories: categories associated with the post.
     :ivar tags: tags associated with the post.
     :ivar content: the actual content of the post.
@@ -130,11 +131,17 @@ GENERATOR_LOGGER = FloresLogger("generator")
 class Generator:
     """Implement the Flores static site generator.
 
-    :attr FRONTMATTER_REGEX: the regex used to detect the frontmatter region of the
+    :cvar FRONTMATTER_REGEX: the regex used to detect the frontmatter region of the
         Markdown-frontmatter files.
-    :attr MD_EXTENSIONS: the list of extensions used when parsing Markdown.
-    :attr DEFAULT_CONFIG: the default configuration of the site generator.
-    :attr IMAGE_EXTENSIONS: the image extensions recognized by Flores.
+    :cvar MD_EXTENSIONS: the list of extensions used when parsing Markdown.
+    :cvar DEFAULT_CONFIG: the default configuration of the site generator.
+    :cvar IMAGE_EXTENSIONS: the image extensions recognized by Flores.
+    :cvar INIT_CONFIG_FILE: the default config file that gets generated when
+        initializing a new site.
+    :cvar INIT_TEMPLATE_FILE: the default template file that gets generated when
+        initializing a new site.
+    :cvar INIT_PAGE_FILE: the default page file that gets generated when
+        initializing a new site.
     """
 
     FRONTMATTER_REGEX = r"---\n(((?!---)[\s\S])*)\n?---"
@@ -153,6 +160,37 @@ class Generator:
     }
 
     IMAGE_EXTENSIONS = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG"]
+
+    INIT_CONFIG_FILE = "\n".join(
+        [
+            "{",
+            '    "title": "My awesome site"',
+            "}",
+        ]
+    )
+
+    INIT_TEMPLATE_FILE = "\n".join(
+        [
+            "<!DOCTYPE html>",
+            "<html>",
+            "    <head>",
+            "        <title> {{ site.config.title }} </title>",
+            "    </head>",
+            "    <body>",
+            "        {{ page.content }}",
+            "    </body>",
+            "</html>",
+        ]
+    )
+
+    INIT_PAGE_FILE = "\n".join(
+        [
+            "---",
+            "template: main",
+            "---",
+            "This site is built with Flores!",
+        ]
+    )
 
     def __init__(
         self,
@@ -211,7 +249,6 @@ class Generator:
         :param exit_code: the code to exit the program with.
         :param clean_up: if True, clean up the build directory before exiting.
         """
-        self.__had_error = True
         self.__log.critical(message)
         if clean_up:
             self.clean()
@@ -231,7 +268,7 @@ class Generator:
     def jinja_env(self) -> jinja2.Environment:
         """Get the Jinja environment that holds the templates.
 
-        :ret: the Jinja environment instance associated to the project.
+        :return: the Jinja environment instance associated to the project.
         """
         return self.__jinja_env
 
@@ -239,7 +276,7 @@ class Generator:
     def config(self) -> dict[str, Any]:
         """Get the config of the generator.
 
-        :ret: the config dictionary.
+        :return: the config dictionary.
         """
         return self.__get_config()
 
@@ -247,7 +284,7 @@ class Generator:
     def project_dir(self) -> str:
         """Get the root project directory.
 
-        :ret: the path to the root project directory.
+        :return: the path to the root project directory.
         """
         return self.__project_dir
 
@@ -255,7 +292,7 @@ class Generator:
     def templates_dir(self) -> str:
         """Get the project directory containing the templates.
 
-        :ret: the path to the templates directory.
+        :return: the path to the templates directory.
         """
         return os.path.join(self.project_dir, "_templates")
 
@@ -263,7 +300,7 @@ class Generator:
     def pages_dir(self) -> str:
         """Get the project directory containing the pages.
 
-        :ret: the path to the pages directory.
+        :return: the path to the pages directory.
         """
         return os.path.join(self.project_dir, "_pages")
 
@@ -271,7 +308,7 @@ class Generator:
     def stylesheets_dir(self) -> str:
         """Get the project directory containing the stylesheets (Sass/SCSS/CSS).
 
-        :ret: the path to the stylesheets directory.
+        :return: the path to the stylesheets directory.
         """
         return os.path.join(self.project_dir, "_css")
 
@@ -279,7 +316,7 @@ class Generator:
     def javascript_dir(self) -> str:
         """Get the project directory containing the JavaScript files.
 
-        :ret: the path to the JavaScript files directory.
+        :return: the path to the JavaScript files directory.
         """
         return os.path.join(self.project_dir, "_js")
 
@@ -287,7 +324,7 @@ class Generator:
     def posts_dir(self) -> str:
         """Get the project directory containing the posts.
 
-        :ret: the path to the posts directory.
+        :return: the path to the posts directory.
         """
         return os.path.join(self.project_dir, "_posts")
 
@@ -295,7 +332,7 @@ class Generator:
     def drafts_dir(self) -> str:
         """Get the project directory containing the drafts.
 
-        :ret: the path to the drafts directory.
+        :return: the path to the drafts directory.
         """
         return os.path.join(self.project_dir, "_drafts")
 
@@ -303,7 +340,7 @@ class Generator:
     def data_dir(self) -> str:
         """Get the project directory containing the data files.
 
-        :ret: the path to the data files directory.
+        :return: the path to the data files directory.
         """
         return os.path.join(self.project_dir, "_data")
 
@@ -311,7 +348,7 @@ class Generator:
     def assets_dir(self) -> str:
         """Get the project directory containing the various assets (images, PDFs...).
 
-        :ret: the path to the assets directory.
+        :return: the path to the assets directory.
         """
         return os.path.join(self.project_dir, "_assets")
 
@@ -323,7 +360,7 @@ class Generator:
         considered protected; this is to differentiate them from other, user-defined
         directories.
 
-        :ret: the list of the paths to the protected directories.
+        :return: the list of the paths to the protected directories.
         """
         return [
             self.templates_dir,
@@ -343,7 +380,7 @@ class Generator:
 
         This directory will host the final static site after the build.
 
-        :ret: the path to the build directory.
+        :return: the path to the build directory.
         """
         return os.path.join(self.project_dir, "_site")
 
@@ -353,7 +390,7 @@ class Generator:
 
         This directory will host the final CSS files for the site after the build.
 
-        :ret: the path to the CSS build directory.
+        :return: the path to the CSS build directory.
         """
         return os.path.join(self.build_dir, "css")
 
@@ -364,7 +401,7 @@ class Generator:
         This directory will host the final JavaScript files for the site after the
         build.
 
-        :ret: the path to the JavaScript build directory.
+        :return: the path to the JavaScript build directory.
         """
         return os.path.join(self.build_dir, "js")
 
@@ -374,7 +411,7 @@ class Generator:
 
         This directory will host the final asset files for the site after the build.
 
-        :ret: the path to the assets build directory.
+        :return: the path to the assets build directory.
         """
         return os.path.join(self.build_dir, "assets")
 
@@ -385,7 +422,7 @@ class Generator:
         Note that this will return the path of where the config file is supposed to be;
         it does not mean that the config file is guaranteed to exist.
 
-        :ret: the path of the config file.
+        :return: the path of the config file.
         """
         return os.path.join(self.data_dir, "config.json")
 
@@ -396,7 +433,7 @@ class Generator:
         then it is used as the configuration for the site generator. Otherwise, the
         default configuration (`self.DEFAULT_CONFIG`) is used.
 
-        :ret: the parsed configuration for the site generator.
+        :return: the parsed configuration for the site generator.
         """
         if os.path.isfile(self.config_file):
             self.__log.debug(f"Loading site config file: '{self.config_file}'.")
@@ -557,7 +594,7 @@ class Generator:
         """Split a filepath to its elements (base directory, name, extension).
 
         :param filepath: the filepath to split.
-        :ret: a (base directory, name, extension) 3-tuple.
+        :return: a (base directory, name, extension) 3-tuple.
         """
         base_directory, filename_with_extension = os.path.split(filepath)
         filename, extension = os.path.splitext(filename_with_extension)
@@ -586,7 +623,7 @@ class Generator:
         :param dirs_only: if True then only collect directories (mutually exclusive with
             `files_only`).
         :param recursive: if True, search the base directory recursively.
-        :ret: the list of the paths to the collected elements.
+        :return: the list of the paths to the collected elements.
         """
         assert not (
             files_only and dirs_only
@@ -644,7 +681,7 @@ class Generator:
         """Collect all the Markdown files from a given directory.
 
         :param directory: the directory to collect markdown files from.
-        :ret: the list of the paths to the markdown files.
+        :return: the list of the paths to the markdown files.
         """
         if not os.path.isdir(directory):
             return []
@@ -659,7 +696,7 @@ class Generator:
     def page_files(self) -> list[str]:
         """Collect all the page files of the project.
 
-        :ret: the list of the paths to the project's page files.
+        :return: the list of the paths to the project's page files.
         """
         return self.__collect_markdown_files_from_dir(self.pages_dir)
 
@@ -667,7 +704,7 @@ class Generator:
     def template_files(self) -> list[str]:
         """Collect all the template files of the project.
 
-        :ret: the list of the paths to the project's template files.
+        :return: the list of the paths to the project's template files.
         """
         if not os.path.isdir(self.templates_dir):
             return []
@@ -682,7 +719,7 @@ class Generator:
     def stylesheet_files(self) -> list[str]:
         """Collect all the stylesheet files of the project.
 
-        :ret: the list of the paths to the project's stylesheet files.
+        :return: the list of the paths to the project's stylesheet files.
         """
         if not os.path.isdir(self.stylesheets_dir):
             return []
@@ -698,7 +735,7 @@ class Generator:
     def javascript_files(self) -> list[str]:
         """Collect all the JavaScript files of the project.
 
-        :ret: the list of the paths to the project's JavaScript files.
+        :return: the list of the paths to the project's JavaScript files.
         """
         if not os.path.isdir(self.javascript_dir):
             return []
@@ -714,7 +751,7 @@ class Generator:
     def post_files(self) -> list[str]:
         """Collect all the post files of the project.
 
-        :ret: the list of the paths to the project's post files.
+        :return: the list of the paths to the project's post files.
         """
         return self.__collect_markdown_files_from_dir(self.posts_dir)
 
@@ -722,7 +759,7 @@ class Generator:
     def draft_files(self) -> list[str]:
         """Collect all the draft files of the project.
 
-        :ret: the list of the paths to the project's draft files.
+        :return: the list of the paths to the project's draft files.
         """
         return self.__collect_markdown_files_from_dir(self.drafts_dir)
 
@@ -730,7 +767,7 @@ class Generator:
     def data_files(self) -> list[str]:
         """Collect all the data files of the project.
 
-        :ret: the list of the paths to the project's data files.
+        :return: the list of the paths to the project's data files.
         """
         if not os.path.isdir(self.data_dir):
             return []
@@ -749,7 +786,7 @@ class Generator:
         Any Markdown-frontmatter files in these directories will be parsed as a user
         data page.
 
-        :ret: the list of the paths to the project's user data directories.
+        :return: the list of the paths to the project's user data directories.
         """
         all_dirs = self.__collect_elements_from_dir(
             self.project_dir,
@@ -776,7 +813,7 @@ class Generator:
         ```
 
         :param filepath: the path to the frontmatter file to parse.
-        :ret: a (frontmatter, markdown) tuple.
+        :return: a (frontmatter, markdown) tuple.
         """
         self.__log.debug(f"Parsing frontmatter file: '{filepath}'.")
         with open(filepath, "r") as input_file:
@@ -814,7 +851,7 @@ class Generator:
         This interface allows us to dynamically configure the Markdown extensions used
         to render Markdown to HTML, based on the configuration of the site generator.
 
-        :ret: a dictionary of configurations for the Markdown extensions.
+        :return: a dictionary of configurations for the Markdown extensions.
         """
         extension_configs = {}
 
@@ -838,7 +875,7 @@ class Generator:
         generator are used.
 
         :param source: the Markdown source to render.
-        :ret: the resulting HTML.
+        :return: the resulting HTML.
         """
         return markdown.markdown(
             source,
@@ -850,7 +887,7 @@ class Generator:
     def collect_pages(self) -> list[Page]:
         """Collect and prepare all the main pages of the project.
 
-        :ret: a list of Page objects.
+        :return: a list of Page objects.
         """
         pages = []
         for page_file in self.page_files:
@@ -895,7 +932,7 @@ class Generator:
     def collect_templates(self) -> list[jinja2.Template]:
         """Collect and prepare all the Jinja templates of the project.
 
-        :ret: a list of Template objects.
+        :return: a list of Template objects.
         """
         templates = []
         for template_file in self.template_files:
@@ -928,7 +965,7 @@ class Generator:
         build of the site.
 
         :param include_drafts: if True, include draft posts.
-        :ret: a list of Post objects.
+        :return: a list of Post objects.
         """
         posts = []
         files = self.post_files
@@ -1326,6 +1363,27 @@ class Generator:
                 self.__log.debug(f"Image '{source_file}' saved at '{dest_file}'.")
 
         self.__log.debug("Done building images.")
+
+    def init(self) -> None:
+        """Initialize a basic site."""
+        self.__log.info(f"Initializing basic site at '{self.project_dir}'...")
+
+        # We should be okay to create the project directory.
+        # The basic template used by `init` will only contain a basic config data file,
+        # a basic template and a basic page.
+        os.makedirs(self.data_dir)
+        os.makedirs(self.templates_dir)
+        os.makedirs(self.pages_dir)
+
+        # We can now write the appropriate template data into each file.
+        with open(self.config_file, "w") as config_file:
+            config_file.write(self.INIT_CONFIG_FILE)
+        with open(os.path.join(self.templates_dir, "main.html"), "w") as main_template:
+            main_template.write(self.INIT_TEMPLATE_FILE)
+        with open(os.path.join(self.pages_dir, "index.md"), "w") as main_page:
+            main_page.write(self.INIT_PAGE_FILE)
+
+        self.__log.info(f"Done! Site initialized at '{self.project_dir}'.")
 
     def clean(self) -> None:
         """Clean up the generated site."""

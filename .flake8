@@ -19,6 +19,9 @@ per-file-ignores =
     noxfile.py:D100
     # No need to have a module-level docstring for setup.py.
     setup.py:D100
+    # No need to check for module-level docstrings, imports, or shadowing builtins in
+    # conf.py
+    docs/conf.py:D100,E402,A001
 
 # pep8-naming is right, but this comes from flores.server.FloresHTTPRequestHandler; we
 # cannot change that method's name, because it is inherited from

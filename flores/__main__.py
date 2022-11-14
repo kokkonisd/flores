@@ -2,9 +2,31 @@
 
 import argparse
 import logging
+import os
+import sys
 
-from flores.generator import Generator
+from flores import __version__
+from flores.exceptions import FloresErrorCode
+from flores.generator import GENERATOR_LOGGER, Generator
 from flores.server import Server
+
+
+def init_cmd(args: argparse.Namespace) -> None:
+    """Run the 'init' command."""
+    # Refuse to initialize on an existing directory/file to avoid destroying
+    # something by accident.
+    if os.path.exists(args.project_dir):
+        GENERATOR_LOGGER.critical(
+            f"Cannot initialize: '{args.project_dir}' already exists."
+        )
+        sys.exit(FloresErrorCode.FILE_OR_DIR_NOT_FOUND.value)
+
+    os.makedirs(args.project_dir)
+
+    generator = Generator(
+        project_dir=args.project_dir, cli_mode=True, log_level=logging.INFO
+    )
+    generator.init()
 
 
 def build_cmd(args: argparse.Namespace) -> None:
@@ -77,7 +99,23 @@ def main() -> None:
     """Parse command-line arguments and run Flores."""
     parser = argparse.ArgumentParser(description="Build/serve a static site.")
     parser.set_defaults(func=None)
+    parser.add_argument(
+        "--version",
+        help="Show the version of Flores.",
+        action="version",
+        version=f"flores, version {__version__}",
+    )
+
     subparsers = parser.add_subparsers()
+
+    init_subparser = subparsers.add_parser("init", help="Initialize a basic site.")
+    init_subparser.add_argument(
+        "project_dir",
+        nargs="?",
+        default=".",
+        help="The directory of the project.",
+    )
+    init_subparser.set_defaults(func=init_cmd)
 
     build_subparser = subparsers.add_parser("build", help="Build the static site.")
     __add_common_args(build_subparser)

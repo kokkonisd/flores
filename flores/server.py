@@ -67,7 +67,7 @@ class Server:
 
     This server is **NOT** a production server; it is only meant to be used locally.
 
-    :attr DEFAULT_PORT: the default port when serving a site on localhost.
+    :cvar DEFAULT_PORT: the default port when serving a site on localhost.
     """
 
     DEFAULT_PORT = 4000
