@@ -135,6 +135,12 @@ class Generator:
     :cvar MD_EXTENSIONS: the list of extensions used when parsing Markdown.
     :cvar DEFAULT_CONFIG: the default configuration of the site generator.
     :cvar IMAGE_EXTENSIONS: the image extensions recognized by Flores.
+    :cvar INIT_CONFIG_FILE: the default config file that gets generated when
+        initializing a new site.
+    :cvar INIT_TEMPLATE_FILE: the default template file that gets generated when
+        initializing a new site.
+    :cvar INIT_PAGE_FILE: the default page file that gets generated when
+        initializing a new site.
     """
 
     FRONTMATTER_REGEX = r"---\n(((?!---)[\s\S])*)\n?---"
@@ -153,6 +159,37 @@ class Generator:
     }
 
     IMAGE_EXTENSIONS = [".jpg", ".JPG", ".jpeg", ".JPEG", ".png", ".PNG"]
+
+    INIT_CONFIG_FILE = "\n".join(
+        [
+            "{",
+            '    "title": "My awesome site"',
+            "}",
+        ]
+    )
+
+    INIT_TEMPLATE_FILE = "\n".join(
+        [
+            "<!DOCTYPE html>",
+            "<html>",
+            "    <head>",
+            "        <title> {{ site.config.title }} </title>",
+            "    </head>",
+            "    <body>",
+            "        {{ page.content }}",
+            "    </body>",
+            "</html>",
+        ]
+    )
+
+    INIT_PAGE_FILE = "\n".join(
+        [
+            "---",
+            "template: main",
+            "---",
+            "This site is built with Flores!",
+        ]
+    )
 
     def __init__(
         self,
@@ -211,7 +248,6 @@ class Generator:
         :param exit_code: the code to exit the program with.
         :param clean_up: if True, clean up the build directory before exiting.
         """
-        self.__had_error = True
         self.__log.critical(message)
         if clean_up:
             self.clean()
@@ -1326,6 +1362,27 @@ class Generator:
                 self.__log.debug(f"Image '{source_file}' saved at '{dest_file}'.")
 
         self.__log.debug("Done building images.")
+
+    def init(self) -> None:
+        """Initialize a basic site."""
+        self.__log.info(f"Initializing basic site at '{self.project_dir}'...")
+
+        # We should be okay to create the project directory.
+        # The basic template used by `init` will only contain a basic config data file,
+        # a basic template and a basic page.
+        os.makedirs(self.data_dir)
+        os.makedirs(self.templates_dir)
+        os.makedirs(self.pages_dir)
+
+        # We can now write the appropriate template data into each file.
+        with open(self.config_file, "w") as config_file:
+            config_file.write(self.INIT_CONFIG_FILE)
+        with open(os.path.join(self.templates_dir, "main.html"), "w") as main_template:
+            main_template.write(self.INIT_TEMPLATE_FILE)
+        with open(os.path.join(self.pages_dir, "index.md"), "w") as main_page:
+            main_page.write(self.INIT_PAGE_FILE)
+
+        self.__log.info(f"Done! Site initialized at '{self.project_dir}'.")
 
     def clean(self) -> None:
         """Clean up the generated site."""
