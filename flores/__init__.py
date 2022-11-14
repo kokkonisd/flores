@@ -2,7 +2,7 @@
 
 name = "flores"
 description = "Yet another static site generator."
-__version_info__ = ("0", "1", "0", "rc")
+__version_info__ = ("0", "1", "0")
 __version__ = ".".join(__version_info__)
 __author_name__ = "Dimitri Kokkonis"
 __author_email__ = "kokkonisd@gmail.com"
