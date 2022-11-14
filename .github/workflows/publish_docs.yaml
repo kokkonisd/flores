@@ -1,0 +1,49 @@
+# Publish the documentation from the main branch.
+name: Publish documentation to Pages
+
+on:
+  push:
+    branches: ["main"]
+
+# Allows to run the workflow manually.
+workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install documentation dependencies
+        run: python -m pip install -r requirements-docs.txt
+      - name: Build documentation
+        run: sphinx-build -b html docs/ docs/_build/
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Upload documentation
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # Upload the documentation folder
+          path: "docs/_build/"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
+
