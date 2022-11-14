@@ -13,9 +13,16 @@ setuptools.setup(
     description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/kokkonisd/saul",
+    project_urls={
+        "Source": "https://github.com/kokkonisd/flores",
+        "Documentation": "https://kokkonisd.github.io/flores",
+    },
     classifiers=[
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Development Status :: 4 - Beta",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS",
+        "Topic :: Internet :: WWW/HTTP :: Site Management",
     ],
     install_requires=[
         "Jinja2",
@@ -29,5 +36,5 @@ setuptools.setup(
     extras_require={"test": ["nox", "pre-commit", "pytest", "pytest-cov", "requests"]},
     packages=["flores"],
     entry_points={"console_scripts": ["flores = flores.__main__:main"]},
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
