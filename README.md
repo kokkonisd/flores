@@ -33,3 +33,14 @@ For the moment, Flores supports the following features:
 - Out-of-the-box image optimization
 - Out-of-the-box Sass/SCSS support
 - A local testing/preview server
+
+
+## Documentation
+
+You can read the latest documentation for the ``main`` branch
+[here](https://kokkonisd.github.io/flores), or you can build it yourself from source:
+
+```bash
+$ python -m pip install requirements-docs.txt
+$ sphinx-build -b html docs/ docs/_build/
+```
