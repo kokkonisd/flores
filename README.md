@@ -37,7 +37,7 @@ For the moment, Flores supports the following features:
 
 ## Documentation
 
-You can read the latest documentation for the ``master`` branch
+You can read the latest documentation for the ``main`` branch
 [here](https://kokkonisd.github.io/flores), or you can build it yourself from source:
 
 ```bash
