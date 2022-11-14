@@ -13,7 +13,7 @@ def tests(session: nox.Session) -> None:
     session.install("-r", "requirements.txt")
     # Install the test dependencies.
     session.install("-r", "requirements-test.txt")
-    # Install saul itself.
+    # Install flores itself.
     session.install("-e", ".")
 
     # Run the testsuite & coverage report.
