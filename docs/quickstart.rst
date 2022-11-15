@@ -153,7 +153,8 @@ is that, while for a file named ``foo.json`` the data will be accessed through t
 handle ``site.data.foo``, for ``config.json`` it will be accessed through
 ``site.config``.
 
-When talking about `templates <#templates>`_ before, we saw this snippet of code:
+When talking about :ref:`templates <What are templates?>` before, we saw this snippet
+of code:
 
 .. code-block:: html
 
