@@ -32,10 +32,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Install documentation dependencies
-        run: python -m pip install -r requirements-docs.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt -r requirements-docs.txt
       - name: Build documentation
-        run: sphinx-build -b html docs/ docs/_build/
+        run: sphinx-build -W -b html docs/ docs/_build/
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload documentation
