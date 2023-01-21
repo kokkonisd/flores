@@ -561,6 +561,21 @@ Again, as for :ref:`building <Building the site>`, you can specify a project dir
    $ flores serve /path/to/directory/
 
 
+Making the local site accessible to your network
+------------------------------------------------
+
+If you want to test how the site looks on other devices (assuming those devices are on
+the same network as the device serving the site), you can bind the server to the host
+device's local IP address:
+
+.. code-block:: console
+
+   $ flores serve -a <local_ip_address>
+
+
+You can then visit the site from other devices on the network by visiting that address.
+
+
 Including drafts in serve
 -------------------------
 

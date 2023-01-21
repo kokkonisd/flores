@@ -55,6 +55,7 @@ def serve_cmd(args: argparse.Namespace) -> None:
     """Run the 'serve' command."""
     server = Server(
         project_dir=args.project_dir,
+        address=args.address,
         port=args.port,
         log_level=logging.DEBUG if args.verbose else logging.INFO,
         log_file=args.log_file,
@@ -136,6 +137,12 @@ def main() -> None:
         "serve", help="Build and serve the static site locally."
     )
     __add_common_args(serve_subparser)
+    serve_subparser.add_argument(
+        "-a",
+        "--address",
+        help="The address to bind the server to.",
+        default=None,
+    )
     serve_subparser.add_argument(
         "-p",
         "--port",
