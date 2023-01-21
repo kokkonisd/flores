@@ -1,7 +1,7 @@
 # Flores
 
-![CI](https://github.com/kokkonisd/flores/actions/workflows/ci.yaml/badge.svg?branch=dev)
-![codecov](https://codecov.io/gh/kokkonisd/flores/branch/dev/graph/badge.svg)
+![CI](https://github.com/kokkonisd/flores/actions/workflows/ci.yaml/badge.svg?branch=main)
+![codecov](https://codecov.io/gh/kokkonisd/flores/branch/main/graph/badge.svg)
 
 Yet another static site generator.
 
