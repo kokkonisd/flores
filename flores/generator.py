@@ -1080,21 +1080,33 @@ class Generator:
             base_address = os.path.join(filename_year, filename_month, filename_day)
             url = os.path.join("/", base_address, name)
 
-            date_string = frontmatter.pop("date", None)
-            if date_string is not None:
-                if type(date_string) != str:
-                    self.__fail(
-                        message=(
-                            f"{post_file}: Expected type 'str' but got "
-                            f"'{type(date_string).__name__}' for key 'date'."
-                        ),
-                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                    )
-            else:
-                date_string = (
-                    f"{filename_year}-{filename_month}-{filename_day} 00:00:00 +0000"
-                )
+            time_string = frontmatter.pop("time", None)
+            timezone_string = frontmatter.pop("timezone", None)
 
+            for time_element_name, time_element_value in (
+                ("time", time_string),
+                ("timezone", timezone_string),
+            ):
+                if time_element_value is not None:
+                    if type(time_element_value) != str:
+                        self.__fail(
+                            message=(
+                                f"{post_file}: Expected type 'str' but got "
+                                f"'{type(time_element_value).__name__}' for key "
+                                f"'{time_element_name}'."
+                            ),
+                            exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                        )
+
+            if time_string is None:
+                time_string = "00:00:00"
+            if timezone_string is None:
+                timezone_string = self.config.get("timezone", "+0000")
+
+            date_string = (
+                f"{filename_year}-{filename_month}-{filename_day} {time_string} "
+                f"{timezone_string}"
+            )
             try:
                 date = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S %z")
             except ValueError as e:
@@ -1117,31 +1129,6 @@ class Generator:
                 day_name_short=date.strftime("%a"),
                 timestamp=date.timestamp(),
             )
-
-            if filename_year != post_date_info["year"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Year mismatch; '{filename_year}' in the "
-                        f"filename, but '{post_date_info['year']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
-            if filename_month != post_date_info["month_padded"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Month mismatch; '{filename_month}' in the "
-                        f"filename, but '{post_date_info['month_padded']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
-            if filename_day != post_date_info["day_padded"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Day mismatch; '{filename_day}' in the "
-                        f"filename, but '{post_date_info['day_padded']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
 
             post_data = dict(frontmatter)
             # Overwriting the following keys is intentional here; if the user provides
