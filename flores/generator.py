@@ -628,6 +628,7 @@ class Generator:
         assert not (
             files_only and dirs_only
         ), "The arguments 'files_only' and 'dirs_only' are mutually exclusive."
+
         # os.walk() does not report an error if an unvalid directory is passed to it, so
         # we should report one here manually to make the behavior uniform regardless of
         # the value of the 'recursive' argument.
@@ -701,19 +702,39 @@ class Generator:
         return self.__collect_markdown_files_from_dir(self.pages_dir)
 
     @property
-    def template_files(self) -> list[str]:
-        """Collect all the template files of the project.
+    def template_resources(self) -> list[str]:
+        """Collect all template resources (including imports/includes).
 
-        :return: the list of the paths to the project's template files.
+        Collect all template files from the templates directory, no matter the depth.
+        Only top-level files are considered templates, but they might import/include
+        other template files from subdirectories within the templates directory.
+
+        :return: the list of the paths to the project's template resources.
         """
         if not os.path.isdir(self.templates_dir):
             return []
 
         return self.__collect_elements_from_dir(
             self.templates_dir,
-            suffixes=[".html", ".htm"],
+            suffixes=[".html", ".htm", ".jinja"],
             files_only=True,
+            recursive=True,
         )
+
+    @property
+    def template_files(self) -> list[str]:
+        """Collect all the template files of the project.
+
+        Only the files that are at the top-level (i.e. right under the templates
+        directory) are considered template files.
+
+        :return: the list of the paths to the project's template files.
+        """
+        return [
+            f
+            for f in self.template_resources
+            if os.path.abspath(os.path.join(f, os.pardir)) == self.templates_dir
+        ]
 
     @property
     def stylesheet_files(self) -> list[str]:
@@ -1263,36 +1284,28 @@ class Generator:
         :param include_drafts: if True, include the drafts in the resources.
         :return: a list of paths to the resources.
         """
+        # For templates, we have to collect *all* resources; technically, the only
+        # valid templates are those found at the top-level of the templates directory,
+        # however those might include/import other templates from subdirectories.
         resources = (
             self.page_files
-            + self.template_files
+            + self.template_resources
             + self.post_files
             + self.data_files
             + self.stylesheet_files
             + self.javascript_files
         )
 
-        for directory in (
-            self.pages_dir,
-            self.templates_dir,
-            self.posts_dir,
-            self.data_dir,
-            self.stylesheets_dir,
-            self.javascript_dir,
-        ):
-            if os.path.isdir(directory):
-                resources.append(directory)
-
         if os.path.isdir(self.assets_dir):
             resources += self.__collect_elements_from_dir(
-                self.assets_dir, files_only=True, recursive=True
-            ) + [self.assets_dir]
+                self.assets_dir, recursive=True
+            )
 
         for directory in self.user_data_dirs:
-            resources += self.__collect_markdown_files_from_dir(directory) + [directory]
+            resources += self.__collect_markdown_files_from_dir(directory)
 
         if include_drafts:
-            resources += self.draft_files + [self.drafts_dir]
+            resources += self.draft_files
 
         return resources
 
