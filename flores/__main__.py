@@ -15,13 +15,13 @@ def init_cmd(args: argparse.Namespace) -> None:
     """Run the 'init' command."""
     # Refuse to initialize on an existing directory/file to avoid destroying
     # something by accident.
-    if os.path.exists(args.project_dir):
+    if os.path.exists(args.project_dir) and not args.force:
         GENERATOR_LOGGER.critical(
             f"Cannot initialize: '{args.project_dir}' already exists."
         )
         sys.exit(FloresErrorCode.FILE_OR_DIR_NOT_FOUND.value)
 
-    os.makedirs(args.project_dir)
+    os.makedirs(args.project_dir, exist_ok=args.force)
 
     generator = Generator(
         project_dir=args.project_dir, cli_mode=True, log_level=logging.INFO
@@ -115,6 +115,12 @@ def main() -> None:
         nargs="?",
         default=".",
         help="The directory of the project.",
+    )
+    init_subparser.add_argument(
+        "-f",
+        "--force",
+        help="Proceed with initialization even if the project directory exists.",
+        action="store_true",
     )
     init_subparser.set_defaults(func=init_cmd)
 
