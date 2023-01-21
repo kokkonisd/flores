@@ -1614,10 +1614,17 @@ class Generator:
                         )
 
         if os.path.isdir(self.stylesheets_dir):
-            sass.compile(
-                dirname=(self.stylesheets_dir, self.css_build_dir),
-                output_style="compressed",
-            )
+            try:
+                sass.compile(
+                    dirname=(self.stylesheets_dir, self.css_build_dir),
+                    output_style="compressed",
+                )
+            except sass.CompileError as e:
+                self.__fail(
+                    message=f"{str(e).replace('Error: ', '').capitalize().rstrip()}",
+                    exit_code=FloresErrorCode.SASS_ERROR,
+                )
+
             # Unfortunately, the sass library will only pick up on *.scss and *.sass
             # files. If there are any *.css files, we'll have to copy them over
             # manually.

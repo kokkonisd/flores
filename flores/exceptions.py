@@ -10,6 +10,7 @@ import enum
 
 import jinja2
 import yaml
+import sass
 
 
 class FloresError(Exception):
@@ -43,6 +44,9 @@ class JSONError(FloresError):
 class ImageError(FloresError):
     """Error for an image file."""
 
+class SassError(FloresError, sass.CompileError):
+    """Error for a Sass/SCSS file."""
+
 
 @enum.unique
 class FloresErrorCode(enum.Enum):
@@ -62,6 +66,7 @@ class FloresErrorCode(enum.Enum):
     YAML_ERROR = 7
     JSON_ERROR = 8
     IMAGE_ERROR = 9
+    SASS_ERROR = 10
 
 
 ERROR_CODE_EXCEPTION_MAP = {
@@ -73,4 +78,5 @@ ERROR_CODE_EXCEPTION_MAP = {
     FloresErrorCode.YAML_ERROR: YAMLError,
     FloresErrorCode.JSON_ERROR: JSONError,
     FloresErrorCode.IMAGE_ERROR: ImageError,
+    FloresErrorCode.SASS_ERROR: SassError,
 }
