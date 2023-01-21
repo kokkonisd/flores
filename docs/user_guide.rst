@@ -129,8 +129,8 @@ post file is the same type of Markdown-Front Matter combination as the :ref:`pag
 
 The title of the post files, however, must follow a specific style: it must be written
 in the format ``YYYY-MM-DD-<name>.md|markdown``. For example, we can have
-``2022-01-09-foo.md``. This date is important; by default, it will be the assigned date
-for this post.
+``2022-01-09-foo.md``. This date is important, as it will be the assigned date for this
+post.
 
 There are *two* mandatory keys that must be present in a post's Front Matter: the
 ``template`` key (which, just like for the :ref:`pages <Pages>`, refers to the template
@@ -149,15 +149,16 @@ specific use and meaning. Here is a full list of those keys:
 +------------+-----------+-----------------+---------------------------------+
 | tags       | list[str] | page.tags       | tags: [hobby, outdoors]         |
 +------------+-----------+-----------------+---------------------------------+
-| date       | str       | page.date       | date: 2021-05-31 12:13:15 +0200 |
+| time       | str       | page.time       | time: "12:13:15"                |
++------------+-----------+-----------------+---------------------------------+
+| timezone   | str       | page.timezone   | timezone: "+0100"               |
 +------------+-----------+-----------------+---------------------------------+
 
-.. warning::
+.. note::
 
-   Redefining the date of the post via the ``date`` key is to be used to provide more
-   precision on the date itself (i.e. by defining the precise time and timezone for the
-   post). An error will be raised if the date specified under the ``date`` key does not
-   match the date specified on the filename.
+    If you want all your posts to share a given timezone by default, you can provide
+    one in the :ref:`config file <Configuration data>`. You can always override this
+    value by specifying a different one in the post file itself.
 
 Multiple keys are accessible for posts, regarding the date. Here is a list of their
 handles and what they stand for, given the date ``2021-04-07 12:13:14 +0300``:
@@ -226,15 +227,17 @@ While the name of the data files can be arbitrary, there is a special name reser
 configuring the site itself: ``config.json``. This file can define the following keys
 that alter the behavior of the website:
 
-+--------------------+-----------------------------------------------------------------+
-| Key name           | Meaning                                                         |
-+====================+=================================================================+
-| ``pygments_style`` | The `Pygments style <https://pygments.org/styles/>`_ used to    |
-|                    | format code snippets on the site.                               |
-+--------------------+-----------------------------------------------------------------+
-| ``images``         | The optimization applied to images; see the :ref:`assets        |
-|                    | section <Images and other assets>`.                             |
-+--------------------+-----------------------------------------------------------------+
++--------------------+--------------------------------------------------------------+
+| Key name           | Meaning                                                      |
++====================+==============================================================+
+| ``pygments_style`` | The `Pygments style <https://pygments.org/styles/>`_ used to |
+|                    | format code snippets on the site.                            |
++--------------------+--------------------------------------------------------------+
+| ``timezone``       | The default timezone used in :ref:`posts <Posts>`.           |
++--------------------+--------------------------------------------------------------+
+| ``images``         | The optimization applied to images; see the :ref:`assets     |
+|                    | section <Images and other assets>`.                          |
++--------------------+--------------------------------------------------------------+
 
 Of course, other optional keys can be defined in ``config.json`` and used throughout the
 site. For example, it is recommended to define a title in this configuration file:
@@ -559,6 +562,21 @@ Again, as for :ref:`building <Building the site>`, you can specify a project dir
 .. code-block:: console
 
    $ flores serve /path/to/directory/
+
+
+Making the local site accessible to your network
+------------------------------------------------
+
+If you want to test how the site looks on other devices (assuming those devices are on
+the same network as the device serving the site), you can bind the server to the host
+device's local IP address:
+
+.. code-block:: console
+
+   $ flores serve -a <local_ip_address>
+
+
+You can then visit the site from other devices on the network by visiting that address.
 
 
 Including drafts in serve

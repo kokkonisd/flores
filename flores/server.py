@@ -67,14 +67,17 @@ class Server:
 
     This server is **NOT** a production server; it is only meant to be used locally.
 
-    :cvar DEFAULT_PORT: the default port when serving a site on localhost.
+    :cvar DEFAULT_ADDRESS: the default address to bind the server to.
+    :cvar DEFAULT_PORT: the default port when serving a site.
     """
 
+    DEFAULT_ADDRESS = "localhost"
     DEFAULT_PORT = 4000
 
     def __init__(
         self,
         project_dir: str,
+        address: Optional[str] = None,
         port: Optional[int] = None,
         log_level: Any = logging.DEBUG,
         log_file: Optional[str] = None,
@@ -84,12 +87,14 @@ class Server:
 
         :param project_dir: the root directory of the project, containing all the
             necessary resources for the site.
+        :param address: the address to bind the server to.
         :param port: the port to serve the site on.
         :param log_level: the level of logging
             (i.e. logging.DEBUG|INFO|WARNING|ERROR|CRITICAL).
         :param log_file: the file to write the logs to; if None, write logs to stderr.
         :param no_color: if True, disable colors when logging.
         """
+        self.address = address or self.DEFAULT_ADDRESS
         self.port = port or self.DEFAULT_PORT
 
         # Set up logging.
@@ -138,7 +143,7 @@ class Server:
         disable_image_rebuild: bool = False,
         auto_rebuild: bool = False,
     ) -> None:
-        """Serve the site on localhost.
+        """Serve the site.
 
         :param include_drafts: if True, include the drafts in the site.
         :param disable_image_rebuild: if True, do not rebuild images.
@@ -159,20 +164,20 @@ class Server:
         # Set up the server thread.
         try:
             server = ThreadingHTTPServer(
-                ("localhost", self.port),
+                (self.address, self.port),
                 partial(FloresHTTPRequestHandler, directory=self.site_dir),
             )
         except OSError:
             self.__log.critical(
-                f"Address `http://localhost:{self.port}` is already in use; is another "
-                "server running?"
+                f"Address `http://{self.address}:{self.port}` is already in use; is "
+                "another server running?"
             )
             sys.exit(1)
         server.timeout = 0.5
         server_thread = threading.Thread(target=server.serve_forever)
         server_thread.start()
 
-        self.__log.info(f"Serving site at http://localhost:{self.port}.")
+        self.__log.info(f"Serving site at http://{self.address}:{self.port}.")
 
         try:
             if auto_rebuild:

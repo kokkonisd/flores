@@ -16,7 +16,7 @@ from typing import Any, Optional, TypedDict, Union
 
 import jinja2
 import markdown
-import pygments
+import pygments.styles
 import sass
 import yaml
 from PIL import Image
@@ -628,6 +628,7 @@ class Generator:
         assert not (
             files_only and dirs_only
         ), "The arguments 'files_only' and 'dirs_only' are mutually exclusive."
+
         # os.walk() does not report an error if an unvalid directory is passed to it, so
         # we should report one here manually to make the behavior uniform regardless of
         # the value of the 'recursive' argument.
@@ -701,19 +702,39 @@ class Generator:
         return self.__collect_markdown_files_from_dir(self.pages_dir)
 
     @property
-    def template_files(self) -> list[str]:
-        """Collect all the template files of the project.
+    def template_resources(self) -> list[str]:
+        """Collect all template resources (including imports/includes).
 
-        :return: the list of the paths to the project's template files.
+        Collect all template files from the templates directory, no matter the depth.
+        Only top-level files are considered templates, but they might import/include
+        other template files from subdirectories within the templates directory.
+
+        :return: the list of the paths to the project's template resources.
         """
         if not os.path.isdir(self.templates_dir):
             return []
 
         return self.__collect_elements_from_dir(
             self.templates_dir,
-            suffixes=[".html", ".htm"],
+            suffixes=[".html", ".htm", ".jinja"],
             files_only=True,
+            recursive=True,
         )
+
+    @property
+    def template_files(self) -> list[str]:
+        """Collect all the template files of the project.
+
+        Only the files that are at the top-level (i.e. right under the templates
+        directory) are considered template files.
+
+        :return: the list of the paths to the project's template files.
+        """
+        return [
+            f
+            for f in self.template_resources
+            if os.path.abspath(os.path.join(f, os.pardir)) == self.templates_dir
+        ]
 
     @property
     def stylesheet_files(self) -> list[str]:
@@ -1059,21 +1080,33 @@ class Generator:
             base_address = os.path.join(filename_year, filename_month, filename_day)
             url = os.path.join("/", base_address, name)
 
-            date_string = frontmatter.pop("date", None)
-            if date_string is not None:
-                if type(date_string) != str:
-                    self.__fail(
-                        message=(
-                            f"{post_file}: Expected type 'str' but got "
-                            f"'{type(date_string).__name__}' for key 'date'."
-                        ),
-                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                    )
-            else:
-                date_string = (
-                    f"{filename_year}-{filename_month}-{filename_day} 00:00:00 +0000"
-                )
+            time_string = frontmatter.pop("time", None)
+            timezone_string = frontmatter.pop("timezone", None)
 
+            for time_element_name, time_element_value in (
+                ("time", time_string),
+                ("timezone", timezone_string),
+            ):
+                if time_element_value is not None:
+                    if type(time_element_value) != str:
+                        self.__fail(
+                            message=(
+                                f"{post_file}: Expected type 'str' but got "
+                                f"'{type(time_element_value).__name__}' for key "
+                                f"'{time_element_name}'."
+                            ),
+                            exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                        )
+
+            if time_string is None:
+                time_string = "00:00:00"
+            if timezone_string is None:
+                timezone_string = self.config.get("timezone", "+0000")
+
+            date_string = (
+                f"{filename_year}-{filename_month}-{filename_day} {time_string} "
+                f"{timezone_string}"
+            )
             try:
                 date = datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S %z")
             except ValueError as e:
@@ -1096,31 +1129,6 @@ class Generator:
                 day_name_short=date.strftime("%a"),
                 timestamp=date.timestamp(),
             )
-
-            if filename_year != post_date_info["year"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Year mismatch; '{filename_year}' in the "
-                        f"filename, but '{post_date_info['year']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
-            if filename_month != post_date_info["month_padded"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Month mismatch; '{filename_month}' in the "
-                        f"filename, but '{post_date_info['month_padded']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
-            if filename_day != post_date_info["day_padded"]:
-                self.__fail(
-                    message=(
-                        f"{post_file}: Day mismatch; '{filename_day}' in the "
-                        f"filename, but '{post_date_info['day_padded']}' in the file."
-                    ),
-                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
-                )
 
             post_data = dict(frontmatter)
             # Overwriting the following keys is intentional here; if the user provides
@@ -1263,36 +1271,28 @@ class Generator:
         :param include_drafts: if True, include the drafts in the resources.
         :return: a list of paths to the resources.
         """
+        # For templates, we have to collect *all* resources; technically, the only
+        # valid templates are those found at the top-level of the templates directory,
+        # however those might include/import other templates from subdirectories.
         resources = (
             self.page_files
-            + self.template_files
+            + self.template_resources
             + self.post_files
             + self.data_files
             + self.stylesheet_files
             + self.javascript_files
         )
 
-        for directory in (
-            self.pages_dir,
-            self.templates_dir,
-            self.posts_dir,
-            self.data_dir,
-            self.stylesheets_dir,
-            self.javascript_dir,
-        ):
-            if os.path.isdir(directory):
-                resources.append(directory)
-
         if os.path.isdir(self.assets_dir):
             resources += self.__collect_elements_from_dir(
-                self.assets_dir, files_only=True, recursive=True
-            ) + [self.assets_dir]
+                self.assets_dir, recursive=True
+            )
 
         for directory in self.user_data_dirs:
-            resources += self.__collect_markdown_files_from_dir(directory) + [directory]
+            resources += self.__collect_markdown_files_from_dir(directory)
 
         if include_drafts:
-            resources += self.draft_files + [self.drafts_dir]
+            resources += self.draft_files
 
         return resources
 
@@ -1614,10 +1614,17 @@ class Generator:
                         )
 
         if os.path.isdir(self.stylesheets_dir):
-            sass.compile(
-                dirname=(self.stylesheets_dir, self.css_build_dir),
-                output_style="compressed",
-            )
+            try:
+                sass.compile(
+                    dirname=(self.stylesheets_dir, self.css_build_dir),
+                    output_style="compressed",
+                )
+            except sass.CompileError as e:
+                self.__fail(
+                    message=f"{str(e).replace('Error: ', '').capitalize().rstrip()}",
+                    exit_code=FloresErrorCode.SASS_ERROR,
+                )
+
             # Unfortunately, the sass library will only pick up on *.scss and *.sass
             # files. If there are any *.css files, we'll have to copy them over
             # manually.

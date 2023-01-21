@@ -46,6 +46,39 @@ def test_cli_init(flores_cli: FloresCLI) -> None:
         assert res.returncode == 0
 
 
+def test_cli_init_force(flores_cli: FloresCLI) -> None:
+    """Test the `init` command with the `--force` switch."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = temp_dir
+        # Create some files to make sure that `init` won't clear what is already there.
+        with open(os.path.join(temp_dir, "existing.txt"), "w") as existing_file:
+            existing_file.write("hello")
+
+        res = flores_cli.run("init", "--force", project_dir)
+        assert res.returncode == 0
+
+        expected_elements = [
+            os.path.join(project_dir, "existing.txt"),
+            os.path.join(project_dir, "_data"),
+            os.path.join(project_dir, "_data", "config.json"),
+            os.path.join(project_dir, "_pages"),
+            os.path.join(project_dir, "_pages", "index.md"),
+            os.path.join(project_dir, "_templates"),
+            os.path.join(project_dir, "_templates", "main.html"),
+        ]
+
+        actual_elements = []
+        for dirpath, dirnames, filenames in os.walk(project_dir):
+            for element in dirnames + filenames:
+                actual_elements.append(os.path.join(dirpath, element))
+
+        assert sorted(actual_elements) == sorted(expected_elements)
+
+        # Attempt to build site, to make sure it works.
+        res = flores_cli.run("build", project_dir)
+        assert res.returncode == 0
+
+
 def test_cli_init_existing_dir(flores_cli: FloresCLI, test_data_dir: str) -> None:
     """When attempting to call `init` on a non-empty dir, it should fail."""
     res = flores_cli.run("init", test_data_dir)

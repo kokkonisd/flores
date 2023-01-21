@@ -70,6 +70,32 @@ def test_complete_posts(test_data_dir: str) -> None:
             # construction in flores.generator.Generator.
             quote="Woohoo!",  # type: ignore
         ),
+        Post(
+            name="post3",
+            source_file=os.path.join(generator.posts_dir, "2023-12-05-post3.md"),
+            base_address=os.path.join("2023", "12", "05"),
+            url=os.path.join("/", "2023", "12", "05", "post3"),
+            template="template2",
+            title="Post 3",
+            content="This post uses an automatic timezone.",
+            is_draft=False,
+            date=PostDateInfo(
+                year="2023",
+                month="12",
+                month_padded="12",
+                month_name="December",
+                month_name_short="Dec",
+                day="5",
+                day_padded="05",
+                day_name="Tuesday",
+                day_name_short="Tue",
+                timestamp=datetime.strptime(
+                    "2023-12-05 18:19:20 -0200", "%Y-%m-%d %H:%M:%S %z"
+                ).timestamp(),
+            ),
+            categories=[],
+            tags=[],
+        ),
     ]
 
     expected_drafts = [
@@ -261,84 +287,67 @@ def test_post_wrong_type_for_tag_element(test_data_dir: str) -> None:
         generator.collect_posts(include_drafts=False)
 
 
-def test_post_wrong_type_for_date_string(test_data_dir: str) -> None:
-    """Attempt to collect posts that have a wrong type for 'date'.
+def test_post_wrong_type_for_time_string(test_data_dir: str) -> None:
+    """Attempt to collect posts that have a wrong type for 'time'.
 
-    We expect an error to be raised when a post's 'date' key is of the wrong type.
+    We expect an error to be raised when a post's 'time' key is of the wrong type.
     """
-    generator = Generator(os.path.join(test_data_dir, "wrong_type_for_date_string"))
+    generator = Generator(os.path.join(test_data_dir, "wrong_type_for_time_string"))
     with pytest.raises(
         WrongTypeOrFormatError,
         match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
-            "type 'str' but got 'int' for key 'date'."
+            "type 'str' but got 'int' for key 'time'."
         ),
     ):
         generator.collect_posts(include_drafts=False)
 
 
-def test_post_wrong_format_for_date_string(test_data_dir: str) -> None:
-    """Attempt to collect posts that have a wrong format for 'date'.
+def test_post_wrong_type_for_timezone_string(test_data_dir: str) -> None:
+    """Attempt to collect posts that have a wrong type for 'timezone'.
 
-    We expect an error to be raised when a post's 'date' key is of the wrong format.
+    We expect an error to be raised when a post's 'timezone' key is of the wrong type.
     """
-    generator = Generator(os.path.join(test_data_dir, "wrong_format_for_date_string"))
+    generator = Generator(os.path.join(test_data_dir, "wrong_type_for_timezone_string"))
+    with pytest.raises(
+        WrongTypeOrFormatError,
+        match=re.escape(
+            f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Expected "
+            "type 'str' but got 'int' for key 'timezone'."
+        ),
+    ):
+        generator.collect_posts(include_drafts=False)
+
+
+def test_post_wrong_format_for_time_string(test_data_dir: str) -> None:
+    """Attempt to collect posts that have a wrong format for 'time'.
+
+    We expect an error to be raised when a post's 'time' key is of the wrong format.
+    """
+    generator = Generator(os.path.join(test_data_dir, "wrong_format_for_time_string"))
     with pytest.raises(
         WrongTypeOrFormatError,
         match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Time data "
-            "'2022/09/04 10:11:12 +0100' does not match format '%Y-%m-%d %H:%M:%S %z'."
+            "'2022-09-04 10:11 +0100' does not match format '%Y-%m-%d %H:%M:%S %z'."
         ),
     ):
         generator.collect_posts(include_drafts=False)
 
 
-def test_post_date_mismatch_year(test_data_dir: str) -> None:
-    """Attempt to collect a post with a date mismatch on the year.
+def test_post_wrong_format_for_timezone_string(test_data_dir: str) -> None:
+    """Attempt to collect posts that have a wrong format for 'timezone'.
 
-    We expect an error to be reported when the year on the post filename and the year
-    defined in the post's frontmatter differ.
+    We expect an error to be raised when a post's 'timezone' key is of the wrong format.
     """
-    generator = Generator(os.path.join(test_data_dir, "date_mismatch_year"))
+    generator = Generator(
+        os.path.join(test_data_dir, "wrong_format_for_timezone_string")
+    )
     with pytest.raises(
         WrongTypeOrFormatError,
         match=re.escape(
-            f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
-            "Year mismatch; '2009' in the filename, but '2010' in the file."
-        ),
-    ):
-        generator.collect_posts(include_drafts=False)
-
-
-def test_post_date_mismatch_month(test_data_dir: str) -> None:
-    """Attempt to collect a post with a date mismatch on the month.
-
-    We expect an error to be reported when the month on the post filename and the month
-    defined in the post's frontmatter differ.
-    """
-    generator = Generator(os.path.join(test_data_dir, "date_mismatch_month"))
-    with pytest.raises(
-        WrongTypeOrFormatError,
-        match=re.escape(
-            f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
-            "Month mismatch; '10' in the filename, but '01' in the file."
-        ),
-    ):
-        generator.collect_posts(include_drafts=False)
-
-
-def test_post_date_mismatch_day(test_data_dir: str) -> None:
-    """Attempt to collect a post with a date mismatch on the day.
-
-    We expect an error to be reported when the day on the post filename and the day
-    defined in the post's frontmatter differ.
-    """
-    generator = Generator(os.path.join(test_data_dir, "date_mismatch_day"))
-    with pytest.raises(
-        WrongTypeOrFormatError,
-        match=re.escape(
-            f"{os.path.join(generator.posts_dir, '2009-10-11-post.md')}: "
-            "Day mismatch; '11' in the filename, but '02' in the file."
+            f"{os.path.join(generator.posts_dir, '2022-09-04-post1.md')}: Time data "
+            "'2022-09-04 10:11:12 UTC+1' does not match format '%Y-%m-%d %H:%M:%S %z'."
         ),
     ):
         generator.collect_posts(include_drafts=False)

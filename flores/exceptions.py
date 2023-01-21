@@ -9,6 +9,7 @@ The mapping between the two is defined by ERROR_CODE_EXCEPTION_MAP.
 import enum
 
 import jinja2
+import sass
 import yaml
 
 
@@ -44,6 +45,10 @@ class ImageError(FloresError):
     """Error for an image file."""
 
 
+class SassError(FloresError, sass.CompileError):
+    """Error for a Sass/SCSS file."""
+
+
 @enum.unique
 class FloresErrorCode(enum.Enum):
     """Describe the Flores error codes.
@@ -62,6 +67,7 @@ class FloresErrorCode(enum.Enum):
     YAML_ERROR = 7
     JSON_ERROR = 8
     IMAGE_ERROR = 9
+    SASS_ERROR = 10
 
 
 ERROR_CODE_EXCEPTION_MAP = {
@@ -73,4 +79,5 @@ ERROR_CODE_EXCEPTION_MAP = {
     FloresErrorCode.YAML_ERROR: YAMLError,
     FloresErrorCode.JSON_ERROR: JSONError,
     FloresErrorCode.IMAGE_ERROR: ImageError,
+    FloresErrorCode.SASS_ERROR: SassError,
 }
