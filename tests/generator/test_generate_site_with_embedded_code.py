@@ -1,7 +1,7 @@
 import os
 import re
 
-import pygments
+import pygments.styles
 import pytest
 
 from flores.exceptions import WrongTypeOrFormatError

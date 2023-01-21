@@ -16,7 +16,7 @@ from typing import Any, Optional, TypedDict, Union
 
 import jinja2
 import markdown
-import pygments
+import pygments.styles
 import sass
 import yaml
 from PIL import Image
