@@ -80,7 +80,11 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
         # it arrives at the testsuite level (here) and simply ignore it.
         try:
             os.kill(server_process.pid, signal.CTRL_C_EVENT)
-            time.sleep(2)
+            # This wait time might seem way too long, but it is once again to accomodate
+            # slow CI machines. In reality, for a fast machine it does not matter: the
+            # KeyboardInterrupt will happen faster, so the sleep will be interrupted.
+            time.sleep(60)
+            raise AssertionError("Ctrl-C handle timeout not long enough")
         except KeyboardInterrupt:
             pass
     else:
