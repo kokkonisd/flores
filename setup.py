@@ -22,6 +22,7 @@ setuptools.setup(
         "Development Status :: 4 - Beta",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
+        "Operating System :: Microsoft :: Windows",
         "Topic :: Internet :: WWW/HTTP :: Site Management",
     ],
     install_requires=[
