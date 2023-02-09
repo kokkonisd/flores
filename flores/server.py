@@ -66,17 +66,28 @@ SERVER_LOGGER = FloresLogger("server")
 class FloresThreadingHTTPServer(ThreadingHTTPServer):
     """Implementation of ThreadingHTTPServer for Flores.
 
-    See comment below for more information on why this is needed.
+    The reason why this "wrapper" class is needed here is interesting:
+
+    - On Linux, we need ``SO_REUSEADDR`` to be set as the socket option, in order to be
+      able to bind to the socket when it is still in a ``TIME_WAIT`` state. This is done
+      via setting ``allow_reuse_address = True`` _before_ binding, which is what is done
+      by default for ``HTTPServer`` and its subclasses[1], so it's what's done by
+      default for ``ThreadingHTTPServer`` too.
+    - On Windows, if ``allow_reuse_address`` is set to ``True``, it will happily accept
+      having two servers running on the exact same address. In reality of course only
+      one will truly control the socket, but we want the error to be explicit to ensure
+      Flores' server has a consistent behavior accross platforms. In order to do that,
+      we need to set ``SO_EXCLUSIVEADDRUSE``... or simply set
+      ``allow_reuse_address = False`` before binding. This is the reason why this
+      wrapper is needed here, and why the value of ``allow_reuse_address`` depends on
+      the platform.
+
+    [1]: https://github.com/python/cpython/blob/3.10/Lib/http/server.py#L133
+    [2]: https://stackoverflow.com/questions/51090637/running-a-python-web-server-\
+         twice-on-the-same-port-on-windows-no-port-already
     """
 
-    # For some reason, HTTPServer and any class that subclasses it (like
-    # ThreadingHTTPServer) sets this attribute to True. The reason given in the source
-    # is "seems to make sense in testing environment", which is... illuminating, but it
-    # doesn't make much sense to me to have different different behaviors on Windows &
-    # Linux, so it's set to False here to ensure you can't run two servers on the same
-    # address & port.
-    # https://github.com/python/cpython/blob/3.10/Lib/http/server.py#L133
-    allow_reuse_address = False
+    allow_reuse_address = sys.platform != "win32"
 
 
 class Server:
@@ -111,7 +122,7 @@ class Server:
         :param log_file: the file to write the logs to; if None, write logs to stderr.
         :param no_color: if True, disable colors when logging.
         """
-        if sys.platform == "win32":
+        if sys.platform == "win32":  # pragma: no cover
             # As it turns out, new process groups on Windows do not handle Ctrl-C
             # signals by default. However, in practice, a KeyboardInterrupt is raised
             # perfectly well when hitting Ctrl-C in cmd (because it's in process group

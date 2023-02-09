@@ -1119,7 +1119,7 @@ class Generator:
 
             # On Windows, removing 0-padding is done with #, not -.
             no_pad_character = "-"
-            if sys.platform == "win32":
+            if sys.platform == "win32":  # pragma: no cover
                 no_pad_character = "#"
             post_date_info = PostDateInfo(
                 year=date.strftime("%Y"),
