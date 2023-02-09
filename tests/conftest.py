@@ -2,6 +2,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import typing
 
@@ -38,7 +39,17 @@ class FloresCLI:
 
         :param *args: arguments to the server command.
         """
-        process = subprocess.Popen(["flores", "serve", *args], stderr=subprocess.PIPE)
+        creationflags = 0
+        # On Windows, we need to make sure the process is created in its own, separate
+        # group, in order to make sure no signals (like Ctrl-C) are propagated upward
+        # to the parent process.
+        if sys.platform == "win32":
+            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
+        process = subprocess.Popen(
+            ["flores", "serve", *args],
+            stderr=subprocess.PIPE,
+            creationflags=creationflags,
+        )
         self.lingering_processes.append(process)
         return process
 
@@ -48,7 +59,12 @@ class FloresCLI:
         See the docstring of the `runserver()` method.
         """
         for lingering_process in self.lingering_processes:
-            lingering_process.send_signal(signal.SIGKILL)
+            if sys.platform == "win32":
+                kill_signal = signal.SIGTERM
+            else:
+                kill_signal = signal.SIGKILL
+
+            lingering_process.send_signal(kill_signal)
             lingering_process.wait()
 
         self.lingering_processes = []

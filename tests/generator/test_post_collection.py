@@ -18,8 +18,8 @@ def test_complete_posts(test_data_dir: str) -> None:
         Post(
             name="post1",
             source_file=os.path.join(generator.posts_dir, "2022-09-04-post1.md"),
-            base_address=os.path.join("2022", "09", "04"),
-            url=os.path.join("/", "2022", "09", "04", "post1"),
+            base_address="/".join(["2022", "09", "04"]),
+            url="/" + "/".join(["2022", "09", "04", "post1"]),
             template="template1",
             title="Post 1",
             content="This is the first post.",
@@ -44,8 +44,8 @@ def test_complete_posts(test_data_dir: str) -> None:
         Post(
             name="post2",
             source_file=os.path.join(generator.posts_dir, "2022-09-05-post2.md"),
-            base_address=os.path.join("2022", "09", "05"),
-            url=os.path.join("/", "2022", "09", "05", "post2"),
+            base_address="/".join(["2022", "09", "05"]),
+            url="/" + "/".join(["2022", "09", "05", "post2"]),
             template="template2",
             title="Post 2",
             content="This is the second post.",
@@ -73,8 +73,8 @@ def test_complete_posts(test_data_dir: str) -> None:
         Post(
             name="post3",
             source_file=os.path.join(generator.posts_dir, "2023-12-05-post3.md"),
-            base_address=os.path.join("2023", "12", "05"),
-            url=os.path.join("/", "2023", "12", "05", "post3"),
+            base_address="/".join(["2023", "12", "05"]),
+            url="/" + "/".join(["2023", "12", "05", "post3"]),
             template="template2",
             title="Post 3",
             content="This post uses an automatic timezone.",
@@ -102,8 +102,8 @@ def test_complete_posts(test_data_dir: str) -> None:
         Post(
             name="draft1",
             source_file=os.path.join(generator.drafts_dir, "2022-09-06-draft1.md"),
-            base_address=os.path.join("2022", "09", "06"),
-            url=os.path.join("/", "2022", "09", "06", "draft1"),
+            base_address="/".join(["2022", "09", "06"]),
+            url="/" + "/".join(["2022", "09", "06", "draft1"]),
             template="template3",
             title="Draft 1",
             content="This is the first draft.",

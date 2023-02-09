@@ -161,6 +161,16 @@ class FloresLogger:
         self.__log_handler.setLevel(logging.DEBUG)
         self.__logger.addHandler(self.__log_handler)
 
+    def close_log_file(self):
+        """If a log file is set and a FileHandler is being used for it, close it.
+
+        Note that the file has to be opened again via `set_log_file` if it is to be
+        reused.
+        """
+        if self.__logger.hasHandlers() and self.__log_handler is not None:
+            self.__logger.removeHandler(self.__log_handler)
+            self.__log_handler.close()
+
     def set_color(self, use_color: bool = True) -> None:
         """Specify whether or not to use color in the logs.
 

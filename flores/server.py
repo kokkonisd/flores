@@ -4,6 +4,7 @@ This server is **NOT** meant to be used in production; it is only meant to be us
 local testing server to preview the site and play around with local modifications.
 """
 
+import ctypes
 import logging
 import os
 import sys
@@ -62,6 +63,22 @@ class FloresHTTPRequestHandler(SimpleHTTPRequestHandler):
 SERVER_LOGGER = FloresLogger("server")
 
 
+class FloresThreadingHTTPServer(ThreadingHTTPServer):
+    """Implementation of ThreadingHTTPServer for Flores.
+
+    See comment below for more information on why this is needed.
+    """
+
+    # For some reason, HTTPServer and any class that subclasses it (like
+    # ThreadingHTTPServer) sets this attribute to True. The reason given in the source
+    # is "seems to make sense in testing environment", which is... illuminating, but it
+    # doesn't make much sense to me to have different different behaviors on Windows &
+    # Linux, so it's set to False here to ensure you can't run two servers on the same
+    # address & port.
+    # https://github.com/python/cpython/blob/3.10/Lib/http/server.py#L133
+    allow_reuse_address = False
+
+
 class Server:
     """Implement the Flores local site server.
 
@@ -94,6 +111,18 @@ class Server:
         :param log_file: the file to write the logs to; if None, write logs to stderr.
         :param no_color: if True, disable colors when logging.
         """
+        if sys.platform == "win32":
+            # As it turns out, new process groups on Windows do not handle Ctrl-C
+            # signals by default. However, in practice, a KeyboardInterrupt is raised
+            # perfectly well when hitting Ctrl-C in cmd (because it's in process group
+            # 0, and the handler is enabled by default). At the same time, sending a
+            # signal via subprocesses does not (because it is *not* in process group 0,
+            # so the handler is not enabled). So we force handling Ctrl-C normally here
+            # to make sure everyone is happy.
+            # See: https://learn.microsoft.com/en-us/windows/console/\
+            #      setconsolectrlhandler.
+            ctypes.windll.kernel32.SetConsoleCtrlHandler(None, False)
+
         self.address = address or self.DEFAULT_ADDRESS
         self.port = port or self.DEFAULT_PORT
 
@@ -163,7 +192,7 @@ class Server:
 
         # Set up the server thread.
         try:
-            server = ThreadingHTTPServer(
+            server = FloresThreadingHTTPServer(
                 (self.address, self.port),
                 partial(FloresHTTPRequestHandler, directory=self.site_dir),
             )

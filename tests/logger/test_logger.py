@@ -1,4 +1,5 @@
 import logging
+import os
 import tempfile
 from typing import Any
 
@@ -60,21 +61,36 @@ def test_logger_file() -> None:
     We expect the logger to write logs to a log file if we specify so, and to use color
     in the log messages.
     """
-    with tempfile.NamedTemporaryFile() as log_file:
-        logger = FloresLogger("test_logger", logging.DEBUG, log_file=log_file.name)
+    # The reason why this is not a `with` block is because the file cannot be opened a
+    # second time on Windows. We need to set `delete=False` to be able to open it
+    # again, however we then need to delete it manually at the end.
+    log_file = tempfile.NamedTemporaryFile(delete=False)
+    # `NamedTemporaryFile` automatically opens the file, but we don't need that at this
+    # point (we just want it to be created), so it should be closed.
+    log_file.close()
 
-        logger.debug("debug message")
-        logger.info("info message")
-        logger.warning("warning message")
-        logger.error("error message")
-        logger.critical("critical message")
+    logger = FloresLogger("test_logger", logging.DEBUG, log_file=log_file.name)
 
-        with open(log_file.name, "r") as file:
-            log_data = file.read()
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warning("warning message")
+    logger.error("error message")
+    logger.critical("critical message")
 
-        for message_type in ("debug", "info", "warning", "error", "critical"):
-            assert (
-                f"{message_type} message" in log_data
-            ), f"{message_type} message not in log file."
-        # If the reset color command exists, that means there is color.
-        assert "\x1b[0m" in log_data, "No color found in log file."
+    # Make sure the logger closes the log file so that we can remove it in the end (see
+    # comment at the beginning of the function).
+    logger.close_log_file()
+
+    with open(log_file.name, "r") as file:
+        log_data = file.read()
+
+    for message_type in ("debug", "info", "warning", "error", "critical"):
+        assert (
+            f"{message_type} message" in log_data
+        ), f"{message_type} message not in log file."
+    # If the reset color command exists, that means there is color.
+    assert "\x1b[0m" in log_data, "No color found in log file."
+
+    # Remember to manually delete the file (see comment at the beginning of the
+    # function).
+    os.unlink(log_file.name)

@@ -1077,8 +1077,8 @@ class Generator:
             filename_month = post_name_elements.pop(0)
             filename_day = post_name_elements.pop(0)
             name = "-".join(post_name_elements)
-            base_address = os.path.join(filename_year, filename_month, filename_day)
-            url = os.path.join("/", base_address, name)
+            base_address = "/".join([filename_year, filename_month, filename_day])
+            url = "/" + "/".join([base_address, name])
 
             time_string = frontmatter.pop("time", None)
             timezone_string = frontmatter.pop("timezone", None)
@@ -1117,13 +1117,17 @@ class Generator:
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                 )
 
+            # On Windows, removing 0-padding is done with #, not -.
+            no_pad_character = "-"
+            if sys.platform == "win32":
+                no_pad_character = "#"
             post_date_info = PostDateInfo(
                 year=date.strftime("%Y"),
-                month=date.strftime("%-m"),
+                month=date.strftime(f"%{no_pad_character}m"),
                 month_padded=date.strftime("%m"),
                 month_name=date.strftime("%B"),
                 month_name_short=date.strftime("%b"),
-                day=date.strftime("%-d"),
+                day=date.strftime(f"%{no_pad_character}d"),
                 day_padded=date.strftime("%d"),
                 day_name=date.strftime("%A"),
                 day_name_short=date.strftime("%a"),
@@ -1473,21 +1477,23 @@ class Generator:
             # statements, variables etc), we can actually render the markdown.
             page["content"] = self.__render_markdown(flat_page_content)
 
+            try:
+                final_page_render = template.render(site=site_data, page=page)
+            except jinja2.exceptions.TemplateError as e:
+                filename = getattr(e, "filename", template.filename)
+                lineno = getattr(e, "lineno", "?")
+                self.__fail(
+                    message=(
+                        f"{filename}:{lineno} (from {page['source_file']}): "
+                        f"{e.message.rstrip('.')}."
+                    ),
+                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
+                )
+
             with open(
                 os.path.join(self.build_dir, f"{page['name']}.html"), "w"
             ) as html_file:
-                try:
-                    html_file.write(template.render(site=site_data, page=page))
-                except jinja2.exceptions.TemplateError as e:
-                    filename = getattr(e, "filename", template.filename)
-                    lineno = getattr(e, "lineno", "?")
-                    self.__fail(
-                        message=(
-                            f"{filename}:{lineno} (from {page['source_file']}): "
-                            f"{e.message.rstrip('.')}."
-                        ),
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
+                html_file.write(final_page_render)
 
         # Render the posts.
         for post in posts:
@@ -1530,24 +1536,26 @@ class Generator:
             # statements, variables etc), we can actually render the markdown.
             post["content"] = self.__render_markdown(flat_post_content)
 
+            try:
+                final_post_render = template.render(site=site_data, page=post)
+            except jinja2.exceptions.TemplateError as e:
+                filename = getattr(e, "filename", template.filename)
+                lineno = getattr(e, "lineno", "?")
+                self.__fail(
+                    message=(
+                        f"{filename}:{lineno} (from {post['source_file']}): "
+                        f"{e.message.rstrip('.')}."
+                    ),
+                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
+                )
+
             with open(
                 os.path.join(
                     self.build_dir, post["base_address"], f"{post['name']}.html"
                 ),
                 "w",
             ) as final_post_file:
-                try:
-                    final_post_file.write(template.render(site=site_data, page=post))
-                except jinja2.exceptions.TemplateError as e:
-                    filename = getattr(e, "filename", template.filename)
-                    lineno = getattr(e, "lineno", "?")
-                    self.__fail(
-                        message=(
-                            f"{filename}:{lineno} (from {post['source_file']}): "
-                            f"{e.message.rstrip('.')}."
-                        ),
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
+                final_post_file.write(final_post_render)
 
         # Render the custom user pages.
         for data_page_category in user_data_pages:
@@ -1591,27 +1599,29 @@ class Generator:
                 # Jinja statements, variables etc), we can actually render the markdown.
                 data_page["content"] = self.__render_markdown(flat_data_page_content)
 
+                try:
+                    final_data_page_render = template.render(
+                        site=site_data, page=data_page
+                    )
+                except jinja2.exceptions.TemplateError as e:
+                    filename = getattr(e, "filename", template.filename)
+                    lineno = getattr(e, "lineno", "?")
+                    self.__fail(
+                        message=(
+                            f"{filename}:{lineno} "
+                            f"(from {data_page['source_file']}): "
+                            f"{e.message.rstrip('.')}."
+                        ),
+                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
+                    )
+
                 with open(
                     os.path.join(
                         self.build_dir, data_page_category, f"{data_page['name']}.html"
                     ),
                     "w",
                 ) as final_data_page_file:
-                    try:
-                        final_data_page_file.write(
-                            template.render(site=site_data, page=data_page)
-                        )
-                    except jinja2.exceptions.TemplateError as e:
-                        filename = getattr(e, "filename", template.filename)
-                        lineno = getattr(e, "lineno", "?")
-                        self.__fail(
-                            message=(
-                                f"{filename}:{lineno} "
-                                f"(from {data_page['source_file']}): "
-                                f"{e.message.rstrip('.')}."
-                            ),
-                            exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                        )
+                    final_data_page_file.write(final_data_page_render)
 
         if os.path.isdir(self.stylesheets_dir):
             try:

@@ -2,8 +2,7 @@ import shutil
 
 import nox
 
-MAIN_PYTHON_VERSION = "3.9"
-SUPPORTED_PYTHON_VERSIONS = [MAIN_PYTHON_VERSION, "3.10"]
+SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10"]
 
 
 @nox.session(python=SUPPORTED_PYTHON_VERSIONS)
@@ -28,7 +27,7 @@ def tests(session: nox.Session) -> None:
     )
 
 
-@nox.session(python=MAIN_PYTHON_VERSION)
+@nox.session(python=SUPPORTED_PYTHON_VERSIONS)
 def lint(session: nox.Session) -> None:
     """Run the linters."""
     # Install the developer requirements.

@@ -54,7 +54,9 @@ def test_serve_basic_project(flores_server: Server) -> None:
 
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     # Check that modifying the site resources will not cause the final build to change,
     # since we're not running with auto-rebuild.
@@ -64,11 +66,13 @@ def test_serve_basic_project(flores_server: Server) -> None:
         index_file.write("\nblablabla")
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     blog_request = requests.get(f"http://localhost:{flores_server.port}/blog")
     assert blog_request.status_code == 200
-    assert blog_request.content.decode() == expected_blog_content
+    assert blog_request.content.decode().replace("\r\n", "\n") == expected_blog_content
     blog_request_html = requests.get(f"http://localhost:{flores_server.port}/blog.html")
     assert blog_request.content == blog_request_html.content
 
@@ -76,7 +80,7 @@ def test_serve_basic_project(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/hello"
     )
     assert post_request.status_code == 200
-    assert post_request.content.decode() == expected_post_content
+    assert post_request.content.decode().replace("\r\n", "\n") == expected_post_content
 
     image_request = requests.get(
         f"http://localhost:{flores_server.port}/assets/sea.jpg"

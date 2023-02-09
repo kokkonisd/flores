@@ -29,7 +29,9 @@ def test_auto_rebuild_page(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     # Modify the index page, and expect a rebuild.
     with open(
@@ -56,7 +58,9 @@ def test_auto_rebuild_page(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -80,7 +84,9 @@ def test_auto_rebuild_template(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     # Modify the index template, and expect a rebuild.
     with open(
@@ -94,7 +100,9 @@ def test_auto_rebuild_template(flores_server: Server) -> None:
     expected_index_content = "<p>This is the index page.</p>"
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -120,7 +128,7 @@ def test_auto_rebuild_post(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/post"
     )
     assert post_request.status_code == 200
-    assert post_request.content.decode() == expected_post_content
+    assert post_request.content.decode().replace("\r\n", "\n") == expected_post_content
 
     # Modify the post page, and expect a rebuild.
     with open(
@@ -149,7 +157,7 @@ def test_auto_rebuild_post(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/post"
     )
     assert post_request.status_code == 200
-    assert post_request.content.decode() == expected_post_content
+    assert post_request.content.decode().replace("\r\n", "\n") == expected_post_content
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -163,7 +171,9 @@ def test_auto_rebuild_asset(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/assets/hello.txt"
     )
     assert asset_request.status_code == 200
-    assert asset_request.content.decode() == expected_asset_content
+    assert (
+        asset_request.content.decode().replace("\r\n", "\n") == expected_asset_content
+    )
 
     # Modify the asset page, and expect a rebuild.
     with open(
@@ -179,7 +189,9 @@ def test_auto_rebuild_asset(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/assets/hello.txt"
     )
     assert asset_request.status_code == 200
-    assert asset_request.content.decode() == expected_asset_content
+    assert (
+        asset_request.content.decode().replace("\r\n", "\n") == expected_asset_content
+    )
 
 
 @pytest.mark.server_data(include_drafts=True, auto_rebuild=True)
@@ -205,7 +217,9 @@ def test_auto_rebuild_draft(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/draft"
     )
     assert draft_request.status_code == 200
-    assert draft_request.content.decode() == expected_draft_content
+    assert (
+        draft_request.content.decode().replace("\r\n", "\n") == expected_draft_content
+    )
 
     # Modify the draft page, and expect a rebuild.
     with open(
@@ -234,7 +248,9 @@ def test_auto_rebuild_draft(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/draft"
     )
     assert draft_request.status_code == 200
-    assert draft_request.content.decode() == expected_draft_content
+    assert (
+        draft_request.content.decode().replace("\r\n", "\n") == expected_draft_content
+    )
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -253,7 +269,7 @@ def test_auto_rebuild_css(flores_server: Server) -> None:
     )
     css_request = requests.get(f"http://localhost:{flores_server.port}/css/main.css")
     assert css_request.status_code == 200
-    assert css_request.content.decode() == expected_css_content
+    assert css_request.content.decode().replace("\r\n", "\n") == expected_css_content
 
     # Modify the css page, and expect a rebuild.
     with open(
@@ -275,7 +291,7 @@ def test_auto_rebuild_css(flores_server: Server) -> None:
     )
     css_request = requests.get(f"http://localhost:{flores_server.port}/css/main.css")
     assert css_request.status_code == 200
-    assert css_request.content.decode() == expected_css_content
+    assert css_request.content.decode().replace("\r\n", "\n") == expected_css_content
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -287,7 +303,7 @@ def test_auto_rebuild_js(flores_server: Server) -> None:
     expected_js_content = 'console.log("Hello");\n'
     js_request = requests.get(f"http://localhost:{flores_server.port}/js/main.js")
     assert js_request.status_code == 200
-    assert js_request.content.decode() == expected_js_content
+    assert js_request.content.decode().replace("\r\n", "\n") == expected_js_content
 
     # Modify the js page, and expect a rebuild.
     with open(
@@ -301,7 +317,7 @@ def test_auto_rebuild_js(flores_server: Server) -> None:
     expected_js_content = 'console.log("Hello");\nconsole.log("Goodbye");'
     js_request = requests.get(f"http://localhost:{flores_server.port}/js/main.js")
     assert js_request.status_code == 200
-    assert js_request.content.decode() == expected_js_content
+    assert js_request.content.decode().replace("\r\n", "\n") == expected_js_content
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -325,7 +341,9 @@ def test_auto_rebuild_data(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     # Modify the site config, and expect a rebuild.
     config = flores_server.generator.config
@@ -353,7 +371,9 @@ def test_auto_rebuild_data(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
 
 @pytest.mark.server_data(auto_rebuild=True)
@@ -377,7 +397,9 @@ def test_failed_auto_rebuild(flores_server: Server) -> None:
     )
     index_request = requests.get(f"http://localhost:{flores_server.port}")
     assert index_request.status_code == 200
-    assert index_request.content.decode() == expected_index_content
+    assert (
+        index_request.content.decode().replace("\r\n", "\n") == expected_index_content
+    )
 
     # Modify the index page, and expect a failed rebuild as no frontmatter is provided.
     with open(

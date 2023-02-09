@@ -168,9 +168,17 @@ def test_optimize_invalid_image(test_data_dir: str) -> None:
 
     with pytest.raises(
         ImageError,
-        match=re.escape(
-            f"{invalid_image}: Cannot identify image file '{invalid_image}'."
-        ),
+        # Here, we add `'.+'` instead of the actual name of the invalid image to stay
+        # compatible with Windows. On Windows, because the path will be quoted in the
+        # exception raised here, its backslashes will double (for some reason):
+        #
+        # original path  -> exception path
+        # 'C:\\My\\Path' -> 'C:\\\\My\\\\Path'
+        #
+        # To avoid any headaches with handling that, we simply trust that it will be
+        # the same; we already check that it is reported correctly at the beginning of
+        # the message, so the user has at least one way of knowing it.
+        match=f"{re.escape(invalid_image)}: Cannot identify image file '.+'.",
     ):
         generator.build()
 

@@ -1,5 +1,6 @@
 import os
 import signal
+import sys
 import tempfile
 import time
 
@@ -114,7 +115,12 @@ def test_cli_serve(flores_cli: FloresCLI, test_data_dir: str) -> None:
     index_request = requests.get("http://localhost:8000")
     assert index_request.status_code == 200
 
-    server.send_signal(signal.SIGINT)
+    if sys.platform == "win32":
+        ctrl_c_signal = signal.CTRL_C_EVENT
+    else:
+        ctrl_c_signal = signal.SIGINT
+
+    server.send_signal(ctrl_c_signal)
     server.wait()
     assert server.returncode == 0
 
@@ -150,6 +156,11 @@ def test_cli_run_double_server(flores_cli: FloresCLI, test_data_dir: str) -> Non
         in server2.stderr.read().decode()  # type: ignore
     )
 
-    server1.send_signal(signal.SIGINT)
+    if sys.platform == "win32":
+        ctrl_c_signal = signal.CTRL_C_EVENT
+    else:
+        ctrl_c_signal = signal.SIGINT
+
+    server1.send_signal(ctrl_c_signal)
     server1.wait()
     assert server1.returncode == 0
