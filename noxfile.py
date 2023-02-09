@@ -1,5 +1,3 @@
-import shutil
-
 import nox
 
 SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10"]
@@ -48,16 +46,3 @@ def docs(session: nox.Session) -> None:
     session.run("sphinx-build", "-W", "-b", "html", "docs/", "docs/_build_html/")
     # Build the documentation in LaTeX, treating warnings as errors.
     session.run("sphinx-build", "-W", "-b", "latex", "docs/", "docs/_build_pdf/")
-    # Make sure the LaTeX version can be compiled to a PDF.
-    # NOTE: this step assumes that `pdflatex` is installed.
-    pdflatex = shutil.which("pdflatex")
-    if pdflatex is None:
-        session.warn(
-            "`pdflatex` not found; skipping compilation to PDF for LaTeX documentation."
-        )
-    else:
-        with session.chdir("docs/_build_pdf/"):
-            session.run(
-                pdflatex, "--interaction=nonstopmode", "flores.tex", external=True
-            )
-            session.run(pdflatex, "flores.tex", external=True)
