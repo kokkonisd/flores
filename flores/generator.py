@@ -664,7 +664,7 @@ class Generator:
                 for element in all_elements
                 if any(
                     [
-                        os.path.split(element)[-1].startswith(prefix)
+                        os.path.basename(element).startswith(prefix)
                         for prefix in prefixes
                     ]
                 )
@@ -961,7 +961,7 @@ class Generator:
             # which part failed and where.
             try:
                 templates.append(
-                    self.jinja_env.get_template(os.path.split(template_file)[-1])
+                    self.jinja_env.get_template(os.path.basename(template_file))
                 )
             except jinja2.exceptions.TemplateError as e:
                 filename = getattr(e, "filename", template_file)
@@ -1395,7 +1395,7 @@ class Generator:
         if os.path.isdir(self.build_dir):
             shutil.rmtree(self.build_dir)
 
-    def render_page_to_file(
+    def __render_page_to_file(
         self,
         page: Union[Page, Post],
         templates: list[jinja2.Template],
@@ -1519,7 +1519,7 @@ class Generator:
         }
 
         for page in pages:
-            self.render_page_to_file(
+            self.__render_page_to_file(
                 page=page,
                 templates=templates,
                 site_data=site_data,
@@ -1528,7 +1528,7 @@ class Generator:
 
         # Render the posts.
         for post in posts:
-            self.render_page_to_file(
+            self.__render_page_to_file(
                 page=post,
                 templates=templates,
                 site_data=site_data,
@@ -1538,7 +1538,7 @@ class Generator:
         # Render the custom user pages.
         for data_page_category in user_data_pages:
             for data_page in user_data_pages[data_page_category]:
-                self.render_page_to_file(
+                self.__render_page_to_file(
                     page=data_page,
                     templates=templates,
                     site_data=site_data,
