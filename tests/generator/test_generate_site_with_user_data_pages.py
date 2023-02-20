@@ -78,8 +78,16 @@ def test_generate_site_with_user_data_pages(test_data_dir: str) -> None:
         os.path.join(generator.build_dir, "mypages"),
         os.path.join(generator.build_dir, "myotherpages"),
         os.path.join(generator.build_dir, "mypages", "my-first-page.html"),
+        os.path.join(generator.build_dir, "mypages", "my-first-page"),
+        os.path.join(generator.build_dir, "mypages", "my-first-page", "index.html"),
         os.path.join(generator.build_dir, "mypages", "my-second-page.html"),
+        os.path.join(generator.build_dir, "mypages", "my-second-page"),
+        os.path.join(generator.build_dir, "mypages", "my-second-page", "index.html"),
         os.path.join(generator.build_dir, "myotherpages", "my-third-page.html"),
+        os.path.join(generator.build_dir, "myotherpages", "my-third-page"),
+        os.path.join(
+            generator.build_dir, "myotherpages", "my-third-page", "index.html"
+        ),
     ]
 
     actual_elements = []
@@ -125,14 +133,33 @@ def test_generate_site_with_user_data_pages(test_data_dir: str) -> None:
     ) as file:
         actual_first_page = file.read()
     with open(
+        os.path.join(generator.build_dir, "mypages", "my-first-page", "index.html"), "r"
+    ) as file:
+        actual_first_page_with_slash = file.read()
+    with open(
         os.path.join(generator.build_dir, "mypages", "my-second-page.html"), "r"
     ) as file:
         actual_second_page = file.read()
     with open(
+        os.path.join(generator.build_dir, "mypages", "my-second-page", "index.html"),
+        "r",
+    ) as file:
+        actual_second_page_with_slash = file.read()
+    with open(
         os.path.join(generator.build_dir, "myotherpages", "my-third-page.html"), "r"
     ) as file:
         actual_third_page = file.read()
+    with open(
+        os.path.join(
+            generator.build_dir, "myotherpages", "my-third-page", "index.html"
+        ),
+        "r",
+    ) as file:
+        actual_third_page_with_slash = file.read()
 
     assert actual_first_page == expected_first_page
+    assert actual_first_page_with_slash == expected_first_page
     assert actual_second_page == expected_second_page
+    assert actual_second_page_with_slash == expected_second_page
     assert actual_third_page == expected_third_page
+    assert actual_third_page_with_slash == expected_third_page

@@ -1461,13 +1461,37 @@ class Generator:
             )
 
         full_page_path = os.path.join(self.build_dir, filepath)
-        page_parent_dir = os.path.dirname(full_page_path)
+        page_parent_dir, page_name, _ = self.__split_filepath_elements(full_page_path)
 
         # Make sure the directories needed for the full path exist.
         os.makedirs(page_parent_dir, exist_ok=True)
 
+        # For a given page `/foo/bar/baz.html`, we need to make sure that all of the
+        # following URLs will render the same page:
+        # - `/foo/bar/baz.html`
+        # - `/foo/bar/baz`
+        # - `/foo/bar/baz/`
+        #
+        # The first one is handled by directly providing that HTML file. The second one
+        # is thankfully given for free by virtue of how the server handles requests (if
+        # it fails to find a file, it will check if the file in the request plus '.html'
+        # corresponds to a file). The third one we need to build, by creating that
+        # directory and putting an `index.html` file in it, meaning
+        # `/foo/bar/baz/index.html`.
         with open(full_page_path, "w") as html_file:
             html_file.write(final_page_render)
+
+        # This refers to the third case listed above; make sure that we do not implement
+        # this behavior for special pages (e.g. the main index page), because then it
+        # will look like this:
+        # - `/index.html`
+        # - `/`
+        # - `/index/`
+        if filepath not in ("index.html", "404.html"):
+            page_slash_path = os.path.join(page_parent_dir, page_name)
+            os.makedirs(page_slash_path, exist_ok=True)
+            with open(os.path.join(page_slash_path, "index.html"), "w") as html_file:
+                html_file.write(final_page_render)
 
     def build(
         self,
