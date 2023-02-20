@@ -1395,6 +1395,80 @@ class Generator:
         if os.path.isdir(self.build_dir):
             shutil.rmtree(self.build_dir)
 
+    def render_page_to_file(
+        self,
+        page: Union[Page, Post],
+        templates: list[jinja2.Template],
+        site_data: dict[Any, Any],
+        filepath: str,
+    ) -> None:
+        """Render a given page to an HTML file.
+
+        Given a page or a post, render it using its template, render the Markdown of the
+        resulting page and produce a final HTML page. Finally, save that page to a file.
+
+        :param page: the page object to render.
+        :param templates: the available templates.
+        :param site_data: the dictionary containing all of the site data to be fed to
+            the page.
+        :param filepath: the path to the final HTML file, relative to the root of the
+            final site.
+        """
+        # Make sure a template exists for this page.
+        page_templates = [
+            template
+            for template in templates
+            if self.__split_filepath_elements(template.name)[1] == page["template"]
+        ]
+        if not page_templates:
+            self.__fail(
+                message=(
+                    f"{page['source_file']}: Template '{page['template']}' not "
+                    f"found in {self.templates_dir}."
+                ),
+                exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
+            )
+
+        template = page_templates[0]
+
+        # Given that the user can embed Jinja statements, variables etc in their
+        # Markdown (e.g. {% for post in site.posts %}), we need to first render
+        # those out.
+        try:
+            flat_page_content = self.jinja_env.from_string(page["content"]).render(
+                site=site_data, page=page
+            )
+        except jinja2.exceptions.TemplateError as e:
+            self.__fail(
+                f"{page['source_file']}: {e.message.rstrip('.')}.",
+                exit_code=FloresErrorCode.TEMPLATE_ERROR,
+            )
+        # Now that the Markdown file is "flat" (i.e. it doesn't contain any Jinja
+        # statements, variables etc), we can actually render the Markdown itself.
+        page["content"] = self.__render_markdown(flat_page_content)
+
+        try:
+            final_page_render = template.render(site=site_data, page=page)
+        except jinja2.exceptions.TemplateError as e:
+            filename = getattr(e, "filename", template.filename)
+            lineno = getattr(e, "lineno", "?")
+            self.__fail(
+                message=(
+                    f"{filename}:{lineno} (from {page['source_file']}): "
+                    f"{e.message.rstrip('.')}."
+                ),
+                exit_code=FloresErrorCode.TEMPLATE_ERROR,
+            )
+
+        full_page_path = os.path.join(self.build_dir, filepath)
+        page_parent_dir = os.path.dirname(full_page_path)
+
+        # Make sure the directories needed for the full path exist.
+        os.makedirs(page_parent_dir, exist_ok=True)
+
+        with open(full_page_path, "w") as html_file:
+            html_file.write(final_page_render)
+
     def build(
         self,
         include_drafts: bool = False,
@@ -1445,184 +1519,35 @@ class Generator:
         }
 
         for page in pages:
-            page_templates = [
-                template
-                for template in templates
-                if self.__split_filepath_elements(template.name)[1] == page["template"]
-            ]
-            if not page_templates:
-                self.__fail(
-                    message=(
-                        f"{page['source_file']}: Template '{page['template']}' not "
-                        f"found in {self.templates_dir}."
-                    ),
-                    exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
-                )
-
-            template = page_templates[0]
-
-            # Given that the user can embed Jinja statements, variables etc in their
-            # markdown (e.g. {% for post in site.posts %}), we need to first render
-            # those out.
-            try:
-                flat_page_content = self.jinja_env.from_string(page["content"]).render(
-                    site=site_data, page=page
-                )
-            except jinja2.exceptions.TemplateError as e:
-                self.__fail(
-                    f"{page['source_file']}: {e.message.rstrip('.')}.",
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-            # Now that the markdown file is "flat" (i.e. it doesn't contain any Jinja
-            # statements, variables etc), we can actually render the markdown.
-            page["content"] = self.__render_markdown(flat_page_content)
-
-            try:
-                final_page_render = template.render(site=site_data, page=page)
-            except jinja2.exceptions.TemplateError as e:
-                filename = getattr(e, "filename", template.filename)
-                lineno = getattr(e, "lineno", "?")
-                self.__fail(
-                    message=(
-                        f"{filename}:{lineno} (from {page['source_file']}): "
-                        f"{e.message.rstrip('.')}."
-                    ),
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-
-            with open(
-                os.path.join(self.build_dir, f"{page['name']}.html"), "w"
-            ) as html_file:
-                html_file.write(final_page_render)
+            self.render_page_to_file(
+                page=page,
+                templates=templates,
+                site_data=site_data,
+                filepath=f"{page['name']}.html",
+            )
 
         # Render the posts.
         for post in posts:
-            # We first need to create the hierarchy to display the posts. The posts will
-            # be stored in folders in the following fashion:
-            # 'YYYY-MM-DD-post-title-here.md' -> YYYY/MM/DD/post-title-here.html
-            os.makedirs(
-                os.path.join(self.build_dir, post["base_address"]), exist_ok=True
+            self.render_page_to_file(
+                page=post,
+                templates=templates,
+                site_data=site_data,
+                filepath=os.path.join(post["base_address"], f"{post['name']}.html"),
             )
-
-            post_templates = [
-                template
-                for template in templates
-                if self.__split_filepath_elements(template.name)[1] == post["template"]
-            ]
-            if not post_templates:
-                self.__fail(
-                    message=(
-                        f"{post['source_file']}: Template '{post['template']}' not "
-                        f"found in {self.templates_dir}."
-                    ),
-                    exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
-                )
-
-            template = post_templates[0]
-
-            # Given that the user can embed Jinja statements, variables etc in their
-            # markdown (e.g. {% for post in site.posts %}), we need to first render
-            # those out.
-            try:
-                flat_post_content = self.jinja_env.from_string(post["content"]).render(
-                    site=site_data, page=post
-                )
-            except jinja2.exceptions.TemplateError as e:
-                self.__fail(
-                    f"{post['source_file']}: {e.message.rstrip('.')}.",
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-            # Now that the markdown file is "flat" (i.e. it doesn't contain any Jinja
-            # statements, variables etc), we can actually render the markdown.
-            post["content"] = self.__render_markdown(flat_post_content)
-
-            try:
-                final_post_render = template.render(site=site_data, page=post)
-            except jinja2.exceptions.TemplateError as e:
-                filename = getattr(e, "filename", template.filename)
-                lineno = getattr(e, "lineno", "?")
-                self.__fail(
-                    message=(
-                        f"{filename}:{lineno} (from {post['source_file']}): "
-                        f"{e.message.rstrip('.')}."
-                    ),
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-
-            with open(
-                os.path.join(
-                    self.build_dir, post["base_address"], f"{post['name']}.html"
-                ),
-                "w",
-            ) as final_post_file:
-                final_post_file.write(final_post_render)
 
         # Render the custom user pages.
         for data_page_category in user_data_pages:
-            # First, create a directory to host the pages. For example, if this data
-            # is projects, we will make a "projects" dir and then host the pages inside
-            # it: "projects/my_project.html", "projects/another_project.html" etc.
-            os.makedirs(os.path.join(self.build_dir, data_page_category))
-
             for data_page in user_data_pages[data_page_category]:
-                data_page_templates = [
-                    template
-                    for template in templates
-                    if self.__split_filepath_elements(template.name)[1]
-                    == data_page["template"]
-                ]
-                if not data_page_templates:
-                    self.__fail(
-                        message=(
-                            f"{data_page['source_file']}: Template "
-                            f"'{data_page['template']}' not found in "
-                            f"{self.templates_dir}."
-                        ),
-                        exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
-                    )
-
-                template = data_page_templates[0]
-
-                # Given that the user can embed Jinja statements, variables etc in their
-                # markdown (e.g. {% for post in site.posts %}), we need to first render
-                # those out.
-                try:
-                    flat_data_page_content = self.jinja_env.from_string(
-                        data_page["content"]
-                    ).render(site=site_data, page=data_page)
-                except jinja2.exceptions.TemplateError as e:
-                    self.__fail(
-                        f"{data_page['source_file']}: {e.message.rstrip('.')}.",
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
-                # Now that the markdown file is "flat" (i.e. it doesn't contain any
-                # Jinja statements, variables etc), we can actually render the markdown.
-                data_page["content"] = self.__render_markdown(flat_data_page_content)
-
-                try:
-                    final_data_page_render = template.render(
-                        site=site_data, page=data_page
-                    )
-                except jinja2.exceptions.TemplateError as e:
-                    filename = getattr(e, "filename", template.filename)
-                    lineno = getattr(e, "lineno", "?")
-                    self.__fail(
-                        message=(
-                            f"{filename}:{lineno} "
-                            f"(from {data_page['source_file']}): "
-                            f"{e.message.rstrip('.')}."
-                        ),
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
-
-                with open(
-                    os.path.join(
-                        self.build_dir, data_page_category, f"{data_page['name']}.html"
+                self.render_page_to_file(
+                    page=data_page,
+                    templates=templates,
+                    site_data=site_data,
+                    filepath=os.path.join(
+                        data_page_category, f"{data_page['name']}.html"
                     ),
-                    "w",
-                ) as final_data_page_file:
-                    final_data_page_file.write(final_data_page_render)
+                )
 
+        # Build the stylesheets.
         if os.path.isdir(self.stylesheets_dir):
             try:
                 sass.compile(
@@ -1654,11 +1579,13 @@ class Generator:
                 # Use shutil.copy2() here to copy file permissions, as well as metadata.
                 shutil.copy2(pure_css_file, destination_file)
 
+        # Build the JavaScript files.
         if os.path.isdir(self.javascript_dir):
             # Copy the entire JS dir into the build directory, preserving its
             # structure.
             shutil.copytree(self.javascript_dir, self.javascript_build_dir)
 
+        # Build the assets.
         if os.path.isdir(self.assets_dir):
             # Copy the entire assets dir into the build directory, preserving its
             # structure.
