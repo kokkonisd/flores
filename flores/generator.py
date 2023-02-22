@@ -1438,9 +1438,14 @@ class Generator:
             flat_page_content = self.jinja_env.from_string(page["content"]).render(
                 site=site_data, page=page
             )
-        except jinja2.exceptions.TemplateError as e:
+        # Use generic `Exception` here instead of `jinja2.exceptions.TemplateError`
+        # because the templates might contain actual Python errors, such as
+        # `ValueError`, which will not be caught otherwise.
+        # See https://github.com/kokkonisd/flores/issues/14.
+        except Exception as e:
+            message = getattr(e, "message", str(e)).rstrip(".")
             self.__fail(
-                f"{page['source_file']}: {e.message.rstrip('.')}.",
+                message=f"{page['source_file']}: {message}.",
                 exit_code=FloresErrorCode.TEMPLATE_ERROR,
             )
         # Now that the Markdown file is "flat" (i.e. it doesn't contain any Jinja
@@ -1449,13 +1454,17 @@ class Generator:
 
         try:
             final_page_render = template.render(site=site_data, page=page)
-        except jinja2.exceptions.TemplateError as e:
+        # Use generic `Exception` here instead of `jinja2.exceptions.TemplateError`
+        # because the templates might contain actual Python errors, such as
+        # `ValueError`, which will not be caught otherwise.
+        # See https://github.com/kokkonisd/flores/issues/14.
+        except Exception as e:
             filename = getattr(e, "filename", template.filename)
             lineno = getattr(e, "lineno", "?")
+            message = getattr(e, "message", str(e)).rstrip(".")
             self.__fail(
                 message=(
-                    f"{filename}:{lineno} (from {page['source_file']}): "
-                    f"{e.message.rstrip('.')}."
+                    f"{filename}:{lineno} (from {page['source_file']}): {message}."
                 ),
                 exit_code=FloresErrorCode.TEMPLATE_ERROR,
             )

@@ -24,6 +24,23 @@ def test_generate_pages_with_template_errors(test_data_dir: str) -> None:
         generator.build()
 
 
+def test_generate_pages_with_python_errors(test_data_dir: str) -> None:
+    """Attempt to generate pages with Jinja code that contains "classic" Python errors.
+
+    We expect that any Python errors (i.e. not Jinja syntax errors) from within the
+    pages themselves will be reported along with the appropriate file.
+    """
+    generator = Generator(os.path.join(test_data_dir, "page_python_errors"))
+
+    with pytest.raises(
+        TemplateError,
+        match=re.escape(
+            f"{os.path.join(generator.pages_dir, 'index.md')}: division by zero."
+        ),
+    ):
+        generator.build()
+
+
 def test_generate_pages_with_templates_with_template_errors(test_data_dir: str) -> None:
     """Attempt to generate pages with templates that contain template errors.
 
