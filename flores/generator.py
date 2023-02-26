@@ -969,13 +969,15 @@ class Generator:
                         exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                     )
 
-                # Root permalinks (i.e. permalinks that are just "/") are pointless and
-                # might lead to confusion, as this is the default behavior of the pages
-                # that do not define a permalink. Hence, it should be an error, to help
-                # catch mistakes.
+                # Setting '/' as the permalink is not allowed because it would overwrite
+                # the index page; various mechanisms in the generator count on the index
+                # page being explicitly defined in the `index.md` page file.
                 if permalink == "/":
                     self.__fail(
-                        message=f"{page_file}: Redundant root permalink '/'.",
+                        message=(
+                            f"{page_file}: Illegal index permalink '/' (would "
+                            "overwrite index)."
+                        ),
                         exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                     )
 
@@ -1020,6 +1022,17 @@ class Generator:
             _, page_data["name"], _ = self.__split_filepath_elements(page_file)
             page_data["content"] = content
             page_data["source_file"] = page_file
+
+            if permalink == page_data["name"]:
+                # Root permalinks (i.e. permalinks that are just "/<page name>") are
+                # pointless and might lead to confusion, as this is the default behavior
+                # of the pages that do not define a permalink. Hence, it should be an
+                # error, to help catch mistakes.
+                self.__fail(
+                    message=f"{page_file}: Redundant root permalink '/{permalink}'.",
+                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                )
+
             # If no permalink was found, the page is placed at the root of the site by
             # default.
             page_data["permalink"] = permalink or page_data["name"]

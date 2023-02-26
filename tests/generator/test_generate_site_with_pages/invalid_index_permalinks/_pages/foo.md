@@ -1,4 +1,4 @@
 ---
 template: main
-permalink: "/foo"
+permalink: "/"
 ---
