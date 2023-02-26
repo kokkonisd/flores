@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from flores.exceptions import FileOrDirNotFoundError, TemplateError
+from flores.exceptions import FileOrDirNotFoundError, FloresError, TemplateError
 from flores.generator import Generator
 
 
@@ -57,6 +57,24 @@ def test_generate_site_with_posts_missing_template(test_data_dir: str) -> None:
         match=re.escape(
             f"{os.path.join(generator.posts_dir, '2022-09-12-post.md')}: Template "
             f"'what-template' not found in {generator.templates_dir}."
+        ),
+    ):
+        generator.build()
+
+
+def test_generate_site_with_posts_with_permalinks(test_data_dir: str) -> None:
+    """Attempt to generate a site with posts that contain permalinks.
+
+    Since permalinks are not allowed for posts, we expect them to trigger an error
+    that's reported along with the name of the offending post file.
+    """
+    generator = Generator(os.path.join(test_data_dir, "posts_with_permalinks"))
+
+    with pytest.raises(
+        FloresError,
+        match=re.escape(
+            f"{os.path.join(generator.posts_dir, '2023-02-26-post.md')}: Permalinks "
+            "are not allowed for posts/drafts."
         ),
     ):
         generator.build()

@@ -32,12 +32,14 @@ class Page(TypedDict):
     :ivar content: the actual content of the page.
     :ivar name: the name of the page (based on the filename).
     :ivar source_file: the path to the source file of the page.
+    :ivar permalink: the absolute path to the final destination of the page on the site.
     """
 
     template: str
     content: str
     name: str
     source_file: str
+    permalink: str
 
 
 class PostDateInfo(TypedDict):
@@ -945,6 +947,72 @@ class Generator:
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                 )
 
+            if "permalink" in frontmatter:
+                permalink = frontmatter.pop("permalink")
+                if type(permalink) != str:
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Expected type 'str' but got "
+                            f"'{type(permalink).__name__}' for key 'permalink'."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Permalinks must be absolute, to avoid confusion and to force the
+                # definition to be explicit.
+                if permalink[0] != "/":
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Relative permalink '{permalink}' (should "
+                            "start with a slash)."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Root permalinks (i.e. permalinks that are just "/") are pointless and
+                # might lead to confusion, as this is the default behavior of the pages
+                # that do not define a permalink. Hence, it should be an error, to help
+                # catch mistakes.
+                if permalink == "/":
+                    self.__fail(
+                        message=f"{page_file}: Redundant root permalink '/'.",
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Permalinks should be valid absolute URLs, so things like '../../tmp'
+                # are not allowed. We need to make sure the resulting path ends up
+                # inside the site.
+                permalink_path = os.path.join(*permalink.split("/"))
+                final_path = os.path.join(self.build_dir, permalink_path)
+                if os.path.relpath(final_path, start=self.build_dir).startswith(
+                    os.pardir
+                ):
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Malformed permalink '{permalink}' (invalid "
+                            "or illegal path)."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # By this point, the permalink should be safe to use. However, it can be
+                # supplied in any of the following versions:
+                # - '/foo/bar/baz'
+                # - '/foo/bar/baz.html'
+                # - '/foo/bar/baz/'
+                #
+                # To make handling it easier, we will convert it to the first form.
+                permalink = permalink.rstrip("/")
+                if permalink.endswith(".html"):
+                    permalink = permalink[:-5]
+
+                # Now, we need to assemble it using `os.path.join` to make sure it's
+                # cross-platform.
+                permalink = os.path.join(*permalink.split("/"))
+
+            else:
+                permalink = None
+
             page_data = dict(frontmatter)
             # Overwriting the 'name' and 'content' keys is intentional here; if the user
             # provides keys with the same name, we don't want them to collide or erase
@@ -952,6 +1020,9 @@ class Generator:
             _, page_data["name"], _ = self.__split_filepath_elements(page_file)
             page_data["content"] = content
             page_data["source_file"] = page_file
+            # If no permalink was found, the page is placed at the root of the site by
+            # default.
+            page_data["permalink"] = permalink or page_data["name"]
 
             pages.append(
                 Page(
@@ -962,7 +1033,7 @@ class Generator:
 
             self.__log.debug(f"Collected page: {pages[-1]}.")
 
-        return pages
+        return sorted(pages, key=lambda page: page["name"])
 
     def collect_templates(self) -> list[jinja2.Template]:
         """Collect and prepare all the Jinja templates of the project.
@@ -985,7 +1056,7 @@ class Generator:
                     exit_code=FloresErrorCode.TEMPLATE_ERROR,
                 )
 
-        return templates
+        return sorted(templates, key=lambda template: template.name)
 
     def collect_posts(self, include_drafts: bool) -> list[Post]:
         """Collect and prepare all the post pages of the project.
@@ -1036,6 +1107,14 @@ class Generator:
                         f"'{type(title).__name__}' for key 'title'."
                     ),
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                )
+
+            if "permalink" in frontmatter:
+                self.__fail(
+                    message=(
+                        f"{post_file}: Permalinks are not allowed for posts/drafts."
+                    ),
+                    exit_code=FloresErrorCode.GENERAL_ERROR,
                 )
 
             categories = frontmatter.pop("categories", [])
@@ -1230,7 +1309,7 @@ class Generator:
 
                 if "template" not in frontmatter:
                     self.__fail(
-                        f"{file}: Missing 'template' key in frontmatter.",
+                        message=f"{file}: Missing 'template' key in frontmatter.",
                         exit_code=FloresErrorCode.MISSING_ELEMENT,
                     )
 
@@ -1242,6 +1321,14 @@ class Generator:
                             "'template'."
                         ),
                         exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                if "permalink" in frontmatter:
+                    self.__fail(
+                        message=(
+                            f"{file}: Permalinks are not allowed for user data pages."
+                        ),
+                        exit_code=FloresErrorCode.GENERAL_ERROR,
                     )
 
                 page_data = frontmatter
@@ -1568,12 +1655,24 @@ class Generator:
             "config": self.config,
         }
 
+        # Since pages can have permalinks, it's useful to check if there are conflicting
+        # ones and report it as a warning.
+        existing_permalinks: dict[str, Page] = {}
         for page in pages:
+            if page["permalink"] in existing_permalinks:
+                self.__log.warning(
+                    f"Pages {page['source_file']} and "
+                    f"{existing_permalinks[page['permalink']]['source_file']} have "
+                    "conflicting permalinks (the first will overwrite the second)."
+                )
+            else:
+                existing_permalinks[page["permalink"]] = page
+
             self.__render_page_to_file(
                 page=page,
                 templates=templates,
                 site_data=site_data,
-                filepath=f"{page['name']}.html",
+                filepath=f"{page['permalink']}.html",
             )
 
         # Render the posts.

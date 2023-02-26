@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from flores.exceptions import FileOrDirNotFoundError, TemplateError
+from flores.exceptions import FileOrDirNotFoundError, FloresError, TemplateError
 from flores.generator import Generator
 
 
@@ -59,6 +59,26 @@ def test_generate_user_data_pages_with_missing_template(test_data_dir: str) -> N
         match=re.escape(
             f"{os.path.join(generator.project_dir, '_mypages', 'my-first-page.md')}: "
             f"Template 'main' not found in {generator.templates_dir}."
+        ),
+    ):
+        generator.build()
+
+
+def test_generate_user_data_pages_with_permalinks(test_data_dir: str) -> None:
+    """Attempt to generate a site with user data pages that contain permalinks.
+
+    Since permalinks are not allowed for user data pages, we expect them to trigger an
+    error that's reported along with the name of the offending page file.
+    """
+    generator = Generator(
+        os.path.join(test_data_dir, "user_data_pages_with_permalinks")
+    )
+
+    with pytest.raises(
+        FloresError,
+        match=re.escape(
+            f"{os.path.join(generator.project_dir, '_mypages', 'hello.md')}: "
+            "Permalinks are not allowed for user data pages."
         ),
     ):
         generator.build()
