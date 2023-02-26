@@ -237,6 +237,8 @@ class Generator:
             autoescape=False,
         )
 
+        self.__site_config: Optional[dict[str, Any]] = None
+
     def __fail(
         self,
         message: str,
@@ -278,7 +280,11 @@ class Generator:
 
         :return: the config dictionary.
         """
-        return self.__get_config()
+        # If a config hasn't been loaded yet, force the load here.
+        if self.__site_config is None:
+            self.__load_config()
+        assert self.__site_config is not None
+        return self.__site_config
 
     @property
     def project_dir(self) -> str:
@@ -449,8 +455,16 @@ class Generator:
                 )
             return config
 
-        self.__log.debug("Loading default site config (no config file found).")
+        self.__log.debug("Using default site config (no config file found).")
         return self.DEFAULT_CONFIG
+
+    def __load_config(self) -> None:
+        """Update the configuration of the site.
+
+        If a configuration file exists, load it; if not, use the default configuration.
+        In any case, update the configuration of the site.
+        """
+        self.__site_config = self.__get_config()
 
     def __get_pygments_style(self) -> Optional[str]:
         style = self.config.get("pygments_style")
@@ -1519,6 +1533,9 @@ class Generator:
             f"Building static site from project directory '{self.project_dir}'..."
         )
         start_build_time = time.time()
+
+        # Force a reload of the configuration file.
+        self.__load_config()
 
         # Purge any previous builds and start from scratch.
         self.clean()
