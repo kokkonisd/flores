@@ -1063,12 +1063,8 @@ class Generator:
 
         A post is a special type of page that refers specifically to a blogpost; its
         filename must be of the format `YYYY-MM-DD-<name>.md|markdown`. The date will
-        be inferred by the filename by default, but a `date` key can also be specified
-        in the file's frontmatter, which will override the date provided in the file.
-        However, the two must match: the `date` key's purpose in the frontmatter is to
-        provide a specific time and timezone if needed.
-        The post will be stored in `<build_dir>/YYYY/MM/DD/<name>.html` in the final
-        build of the site.
+        be inferred by the filename. Further information about the datetime can be
+        provided through keys in the file's frontmatter.
 
         :param include_drafts: if True, include draft posts.
         :return: a list of Post objects.
