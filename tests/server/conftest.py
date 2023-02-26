@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import os
 import signal
+import sys
 import time
 import typing
 
@@ -69,5 +70,24 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
 
     assert server_process.pid is not None
     # Send a Ctrl-C to the server to stop it.
-    os.kill(server_process.pid, signal.SIGINT)
+    if sys.platform == "win32":
+        # On Windows, if you do not create a new processing group when creating a
+        # process, and you then send a Ctrl-C signal to that process, it is also
+        # propagated to the parent. In simple terms, if we Ctrl-C the server here, it
+        # also kills whatever is running the testsuite (which is obviously not what we
+        # want). I cannot find a way to create a new process group when creating the
+        # process, so the next simplest way to handle this is to catch the Ctrl-C when
+        # it arrives at the testsuite level (here) and simply ignore it.
+        try:
+            os.kill(server_process.pid, signal.CTRL_C_EVENT)
+            # This wait time might seem way too long, but it is once again to accomodate
+            # slow CI machines. In reality, for a fast machine it does not matter: the
+            # KeyboardInterrupt will happen faster, so the sleep will be interrupted.
+            time.sleep(120)
+            raise AssertionError("Ctrl-C handle timeout not long enough")
+        except KeyboardInterrupt:
+            pass
+    else:
+        os.kill(server_process.pid, signal.SIGINT)
+
     server_process.join()

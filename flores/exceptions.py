@@ -21,7 +21,7 @@ class FileOrDirNotFoundError(FloresError, FileNotFoundError):
     """Error for a file or directory could not be found."""
 
 
-class MissingElementError(FloresError, KeyError, ValueError):
+class MissingElementError(FloresError, ValueError):
     """Error for a missing element (such as a 'template' key)."""
 
 

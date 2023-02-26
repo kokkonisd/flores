@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from flores.exceptions import FileOrDirNotFoundError, TemplateError
+from flores.exceptions import FileOrDirNotFoundError, FloresError, TemplateError
 from flores.generator import Generator
 
 
@@ -62,6 +62,24 @@ def test_generate_site_with_posts_missing_template(test_data_dir: str) -> None:
         generator.build()
 
 
+def test_generate_site_with_posts_with_permalinks(test_data_dir: str) -> None:
+    """Attempt to generate a site with posts that contain permalinks.
+
+    Since permalinks are not allowed for posts, we expect them to trigger an error
+    that's reported along with the name of the offending post file.
+    """
+    generator = Generator(os.path.join(test_data_dir, "posts_with_permalinks"))
+
+    with pytest.raises(
+        FloresError,
+        match=re.escape(
+            f"{os.path.join(generator.posts_dir, '2023-02-26-post.md')}: Permalinks "
+            "are not allowed for posts/drafts."
+        ),
+    ):
+        generator.build()
+
+
 def test_generate_site_with_posts(test_data_dir: str) -> None:
     """Generate a test site with multiple posts.
 
@@ -78,10 +96,16 @@ def test_generate_site_with_posts(test_data_dir: str) -> None:
         os.path.join(generator.build_dir, "1999", "07", "10"),
         os.path.join(generator.build_dir, "1999", "08", "03"),
         os.path.join(generator.build_dir, "1999", "07", "10", "foo.html"),
+        os.path.join(generator.build_dir, "1999", "07", "10", "foo"),
+        os.path.join(generator.build_dir, "1999", "07", "10", "foo", "index.html"),
         os.path.join(generator.build_dir, "1999", "08", "03", "bar.html"),
+        os.path.join(generator.build_dir, "1999", "08", "03", "bar"),
+        os.path.join(generator.build_dir, "1999", "08", "03", "bar", "index.html"),
         os.path.join(generator.build_dir, "2000", "01"),
         os.path.join(generator.build_dir, "2000", "01", "02"),
         os.path.join(generator.build_dir, "2000", "01", "02", "baz.html"),
+        os.path.join(generator.build_dir, "2000", "01", "02", "baz"),
+        os.path.join(generator.build_dir, "2000", "01", "02", "baz", "index.html"),
     ]
 
     actual_elements = []
@@ -155,14 +179,29 @@ def test_generate_site_with_posts(test_data_dir: str) -> None:
     ) as file:
         actual_foo_post = file.read()
     with open(
+        os.path.join(generator.build_dir, "1999", "07", "10", "foo", "index.html"), "r"
+    ) as file:
+        actual_foo_post_with_slash = file.read()
+    with open(
         os.path.join(generator.build_dir, "1999", "08", "03", "bar.html"), "r"
     ) as file:
         actual_bar_post = file.read()
     with open(
+        os.path.join(generator.build_dir, "1999", "08", "03", "bar", "index.html"), "r"
+    ) as file:
+        actual_bar_post_with_slash = file.read()
+    with open(
         os.path.join(generator.build_dir, "2000", "01", "02", "baz.html"), "r"
     ) as file:
         actual_baz_post = file.read()
+    with open(
+        os.path.join(generator.build_dir, "2000", "01", "02", "baz", "index.html"), "r"
+    ) as file:
+        actual_baz_post_with_slash = file.read()
 
     assert actual_foo_post == "\n".join(expected_foo_post)
+    assert actual_foo_post_with_slash == "\n".join(expected_foo_post)
     assert actual_bar_post == "\n".join(expected_bar_post)
+    assert actual_bar_post_with_slash == "\n".join(expected_bar_post)
     assert actual_baz_post == "\n".join(expected_baz_post)
+    assert actual_baz_post_with_slash == "\n".join(expected_baz_post)

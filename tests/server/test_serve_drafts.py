@@ -36,4 +36,6 @@ def test_serve_draft_while_including_drafts(flores_server: Server) -> None:
         f"http://localhost:{flores_server.port}/1970/01/01/draft"
     )
     assert draft_request.status_code == 200
-    assert draft_request.content.decode() == expected_draft_content
+    assert (
+        draft_request.content.decode().replace("\r\n", "\n") == expected_draft_content
+    )

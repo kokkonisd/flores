@@ -21,12 +21,17 @@ def test_generate_site_with_drafts(test_data_dir: str) -> None:
     draft_page_file = os.path.join(
         generator.build_dir, "1999", "01", "02", "secret-post.html"
     )
+    draft_page_file_with_slash = os.path.join(
+        generator.build_dir, "1999", "01", "02", "secret-post", "index.html"
+    )
 
     expected_site_elements = [
         os.path.join(generator.build_dir, "1999"),
         os.path.join(generator.build_dir, "1999", "01"),
         os.path.join(generator.build_dir, "1999", "01", "02"),
         draft_page_file,
+        os.path.join(generator.build_dir, "1999", "01", "02", "secret-post"),
+        draft_page_file_with_slash,
     ]
 
     actual_site_elements = []
@@ -59,5 +64,8 @@ def test_generate_site_with_drafts(test_data_dir: str) -> None:
 
     with open(draft_page_file, "r") as file:
         actual_draft_page = file.read().split("\n")
+    with open(draft_page_file_with_slash, "r") as file:
+        actual_draft_page_with_slash = file.read().split("\n")
 
     assert actual_draft_page == expected_draft_page
+    assert actual_draft_page_with_slash == expected_draft_page

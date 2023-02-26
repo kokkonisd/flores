@@ -15,7 +15,7 @@ import flores
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Flores"
-author = flores.__author__
+author = "Dimitri Kokkonis"
 version = f"{flores.__version__}"
 copyright = f"2022, {author}"
 

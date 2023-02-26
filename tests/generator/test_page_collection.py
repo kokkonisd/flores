@@ -16,12 +16,14 @@ def test_complete_pages(test_data_dir: str) -> None:
         Page(
             template="template1",
             name="page1",
+            permalink="page1",
             content="This is the content of page 1.",
             source_file=os.path.join(generator.pages_dir, "page1.md"),
         ),
         Page(
             template="template2",
             name="page2",
+            permalink="page2",
             content="This is the content of page 2.",
             source_file=os.path.join(generator.pages_dir, "page2.md"),
             # Ignoring the mypy error here, as it is also ignored during page

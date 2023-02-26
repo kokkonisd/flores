@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flores"
+authors = [
+    { name = "Dimitri Kokkonis", email = "kokkonisd@gmail.com" },
+]
+description = "Yet another static site generator."
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["static-site-generator", "minimal"]
+license = { text = "GPL-3.0" }
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Development Status :: 4 - Beta",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+]
+dependencies = [
+    "Jinja2",
+    "libsass",
+    "pyyaml",
+    "Markdown",
+    "pymdown-extensions",
+    "Pillow",
+    "Pygments",
+]
+dynamic = ["version"]
+
+
+[project.optional-dependencies]
+test = [
+    "nox",
+    "pre-commit",
+    "pytest",
+    "pytest-cov",
+    "requests",
+]
+
+
+[poject.urls]
+repository = "https://github.com/kokkonisd/flores"
+bug-tracker = "https://github.com/kokkonisd/flores/issues"
+documentation = "https://kokkonisd.github.io/flores"
+
+
+[project.scripts]
+flores = "flores.__main__:main"
+
+
+[tool.setuptools.dynamic]
+version = { attr = "flores.__version__" }
+
+
+[tool.isort]
+profile = "black"

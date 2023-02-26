@@ -10,10 +10,16 @@ jobs:
   build:
     strategy:
       matrix:
-        os-name: ["ubuntu-latest", "macos-latest"]
+        platform:
+          - { os: "ubuntu-latest", shell: "bash" }
+          - { os: "macos-latest", shell: "bash" }
+          - { os: "windows-latest", shell: "cmd" }
         python-version: ["3.9", "3.10"]
-    name: Python ${{ matrix.python-version }} (${{ matrix.os-name }})
-    runs-on: ${{ matrix.os-name }}
+    defaults:
+      run:
+        shell: ${{ matrix.platform.shell }}
+    name: Python ${{ matrix.python-version }} (${{ matrix.platform.os }})
+    runs-on: ${{ matrix.platform.os }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -26,7 +32,7 @@ jobs:
       - name: Run nox
         run: nox -p ${{ matrix.python-version }}
       - name: Upload coverage report
-        if: ${{ matrix.os-name == 'ubuntu-latest' && matrix.python-version == '3.9' }}
+        if: ${{ matrix.platform.os == 'ubuntu-latest' && matrix.python-version == '3.9' }}
         uses: codecov/codecov-action@v3
         with:
             files: coverage.xml

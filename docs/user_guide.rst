@@ -116,6 +116,35 @@ As you can imagine, you can add any type of extra key you wish to make your page
 templates more modular and reusable.
 
 
+Permalinks
+----------
+
+Pages are created at the root of the site by default; if you wish for your page to be
+created anywhere else on the site, you must specify a permalink. For example, if you
+want your page ``categories.md`` to appear under ``/blog/categories`` instead of
+``/categories``, you should do the following:
+
+.. code-block:: text
+
+   ---
+   template: main
+   permalink: "/blog/categories"
+   ---
+   This is the categories page.
+
+
+
+Permalinks should **always** start with a slash (``/``), to explicitly denote that they
+are absolute. Furthermore, there is no point in defining a permalink that's equal to
+``"/"``, because that is the default behavior of pages without permalinks.
+
+.. note::
+
+   Permalinks are **not** allowed for :ref:`posts <Posts>`, :ref:`drafts <Drafts>` or
+   :ref:`user data pages <User Data Pages>`. Those all have their own "namespace" on the
+   site and should not be moved to unexpected places.
+
+
 Posts and drafts
 ================
 

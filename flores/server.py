@@ -4,6 +4,7 @@ This server is **NOT** meant to be used in production; it is only meant to be us
 local testing server to preview the site and play around with local modifications.
 """
 
+import ctypes
 import logging
 import os
 import sys
@@ -62,6 +63,33 @@ class FloresHTTPRequestHandler(SimpleHTTPRequestHandler):
 SERVER_LOGGER = FloresLogger("server")
 
 
+class FloresThreadingHTTPServer(ThreadingHTTPServer):
+    """Implementation of ThreadingHTTPServer for Flores.
+
+    The reason why this "wrapper" class is needed here is interesting:
+
+    - On Linux, we need ``SO_REUSEADDR`` to be set as the socket option, in order to be
+      able to bind to the socket when it is still in a ``TIME_WAIT`` state. This is done
+      via setting ``allow_reuse_address = True`` _before_ binding, which is what is done
+      by default for ``HTTPServer`` and its subclasses[1], so it's what's done by
+      default for ``ThreadingHTTPServer`` too.
+    - On Windows, if ``allow_reuse_address`` is set to ``True``, it will happily accept
+      having two servers running on the exact same address. In reality of course only
+      one will truly control the socket, but we want the error to be explicit to ensure
+      Flores' server has a consistent behavior accross platforms. In order to do that,
+      we need to set ``SO_EXCLUSIVEADDRUSE``... or simply set
+      ``allow_reuse_address = False`` before binding. This is the reason why this
+      wrapper is needed here, and why the value of ``allow_reuse_address`` depends on
+      the platform.
+
+    [1]: https://github.com/python/cpython/blob/3.10/Lib/http/server.py#L133
+    [2]: https://stackoverflow.com/questions/51090637/running-a-python-web-server-\
+         twice-on-the-same-port-on-windows-no-port-already
+    """
+
+    allow_reuse_address = sys.platform != "win32"
+
+
 class Server:
     """Implement the Flores local site server.
 
@@ -94,6 +122,18 @@ class Server:
         :param log_file: the file to write the logs to; if None, write logs to stderr.
         :param no_color: if True, disable colors when logging.
         """
+        if sys.platform == "win32":  # pragma: no cover
+            # As it turns out, new process groups on Windows do not handle Ctrl-C
+            # signals by default. However, in practice, a KeyboardInterrupt is raised
+            # perfectly well when hitting Ctrl-C in cmd (because it's in process group
+            # 0, and the handler is enabled by default). At the same time, sending a
+            # signal via subprocesses does not (because it is *not* in process group 0,
+            # so the handler is not enabled). So we force handling Ctrl-C normally here
+            # to make sure everyone is happy.
+            # See: https://learn.microsoft.com/en-us/windows/console/\
+            #      setconsolectrlhandler.
+            ctypes.windll.kernel32.SetConsoleCtrlHandler(None, False)
+
         self.address = address or self.DEFAULT_ADDRESS
         self.port = port or self.DEFAULT_PORT
 
@@ -163,7 +203,7 @@ class Server:
 
         # Set up the server thread.
         try:
-            server = ThreadingHTTPServer(
+            server = FloresThreadingHTTPServer(
                 (self.address, self.port),
                 partial(FloresHTTPRequestHandler, directory=self.site_dir),
             )

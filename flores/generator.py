@@ -32,12 +32,14 @@ class Page(TypedDict):
     :ivar content: the actual content of the page.
     :ivar name: the name of the page (based on the filename).
     :ivar source_file: the path to the source file of the page.
+    :ivar permalink: the absolute path to the final destination of the page on the site.
     """
 
     template: str
     content: str
     name: str
     source_file: str
+    permalink: str
 
 
 class PostDateInfo(TypedDict):
@@ -237,6 +239,8 @@ class Generator:
             autoescape=False,
         )
 
+        self.__site_config: Optional[dict[str, Any]] = None
+
     def __fail(
         self,
         message: str,
@@ -278,7 +282,11 @@ class Generator:
 
         :return: the config dictionary.
         """
-        return self.__get_config()
+        # If a config hasn't been loaded yet, force the load here.
+        if self.__site_config is None:
+            self.__load_config()
+        assert self.__site_config is not None
+        return self.__site_config
 
     @property
     def project_dir(self) -> str:
@@ -449,8 +457,16 @@ class Generator:
                 )
             return config
 
-        self.__log.debug("Loading default site config (no config file found).")
+        self.__log.debug("Using default site config (no config file found).")
         return self.DEFAULT_CONFIG
+
+    def __load_config(self) -> None:
+        """Update the configuration of the site.
+
+        If a configuration file exists, load it; if not, use the default configuration.
+        In any case, update the configuration of the site.
+        """
+        self.__site_config = self.__get_config()
 
     def __get_pygments_style(self) -> Optional[str]:
         style = self.config.get("pygments_style")
@@ -664,7 +680,7 @@ class Generator:
                 for element in all_elements
                 if any(
                     [
-                        os.path.split(element)[-1].startswith(prefix)
+                        os.path.basename(element).startswith(prefix)
                         for prefix in prefixes
                     ]
                 )
@@ -931,6 +947,74 @@ class Generator:
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                 )
 
+            if "permalink" in frontmatter:
+                permalink = frontmatter.pop("permalink")
+                if type(permalink) != str:
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Expected type 'str' but got "
+                            f"'{type(permalink).__name__}' for key 'permalink'."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Permalinks must be absolute, to avoid confusion and to force the
+                # definition to be explicit.
+                if permalink[0] != "/":
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Relative permalink '{permalink}' (should "
+                            "start with a slash)."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Setting '/' as the permalink is not allowed because it would overwrite
+                # the index page; various mechanisms in the generator count on the index
+                # page being explicitly defined in the `index.md` page file.
+                if permalink == "/":
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Illegal index permalink '/' (would "
+                            "overwrite index)."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # Permalinks should be valid absolute URLs, so things like '../../tmp'
+                # are not allowed. We need to make sure the resulting path ends up
+                # inside the site.
+                permalink_path = os.path.join(*permalink.split("/"))
+                final_path = os.path.join(self.build_dir, permalink_path)
+                if os.path.relpath(final_path, start=self.build_dir).startswith(
+                    os.pardir
+                ):
+                    self.__fail(
+                        message=(
+                            f"{page_file}: Malformed permalink '{permalink}' (invalid "
+                            "or illegal path)."
+                        ),
+                        exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                # By this point, the permalink should be safe to use. However, it can be
+                # supplied in any of the following versions:
+                # - '/foo/bar/baz'
+                # - '/foo/bar/baz.html'
+                # - '/foo/bar/baz/'
+                #
+                # To make handling it easier, we will convert it to the first form.
+                permalink = permalink.rstrip("/")
+                if permalink.endswith(".html"):
+                    permalink = permalink[:-5]
+
+                # Now, we need to assemble it using `os.path.join` to make sure it's
+                # cross-platform.
+                permalink = os.path.join(*permalink.split("/"))
+
+            else:
+                permalink = None
+
             page_data = dict(frontmatter)
             # Overwriting the 'name' and 'content' keys is intentional here; if the user
             # provides keys with the same name, we don't want them to collide or erase
@@ -938,6 +1022,20 @@ class Generator:
             _, page_data["name"], _ = self.__split_filepath_elements(page_file)
             page_data["content"] = content
             page_data["source_file"] = page_file
+
+            if permalink == page_data["name"]:
+                # Root permalinks (i.e. permalinks that are just "/<page name>") are
+                # pointless and might lead to confusion, as this is the default behavior
+                # of the pages that do not define a permalink. Hence, it should be an
+                # error, to help catch mistakes.
+                self.__fail(
+                    message=f"{page_file}: Redundant root permalink '/{permalink}'.",
+                    exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                )
+
+            # If no permalink was found, the page is placed at the root of the site by
+            # default.
+            page_data["permalink"] = permalink or page_data["name"]
 
             pages.append(
                 Page(
@@ -948,7 +1046,7 @@ class Generator:
 
             self.__log.debug(f"Collected page: {pages[-1]}.")
 
-        return pages
+        return sorted(pages, key=lambda page: page["name"])
 
     def collect_templates(self) -> list[jinja2.Template]:
         """Collect and prepare all the Jinja templates of the project.
@@ -961,7 +1059,7 @@ class Generator:
             # which part failed and where.
             try:
                 templates.append(
-                    self.jinja_env.get_template(os.path.split(template_file)[-1])
+                    self.jinja_env.get_template(os.path.basename(template_file))
                 )
             except jinja2.exceptions.TemplateError as e:
                 filename = getattr(e, "filename", template_file)
@@ -971,19 +1069,15 @@ class Generator:
                     exit_code=FloresErrorCode.TEMPLATE_ERROR,
                 )
 
-        return templates
+        return sorted(templates, key=lambda template: template.name)
 
     def collect_posts(self, include_drafts: bool) -> list[Post]:
         """Collect and prepare all the post pages of the project.
 
         A post is a special type of page that refers specifically to a blogpost; its
         filename must be of the format `YYYY-MM-DD-<name>.md|markdown`. The date will
-        be inferred by the filename by default, but a `date` key can also be specified
-        in the file's frontmatter, which will override the date provided in the file.
-        However, the two must match: the `date` key's purpose in the frontmatter is to
-        provide a specific time and timezone if needed.
-        The post will be stored in `<build_dir>/YYYY/MM/DD/<name>.html` in the final
-        build of the site.
+        be inferred by the filename. Further information about the datetime can be
+        provided through keys in the file's frontmatter.
 
         :param include_drafts: if True, include draft posts.
         :return: a list of Post objects.
@@ -1022,6 +1116,14 @@ class Generator:
                         f"'{type(title).__name__}' for key 'title'."
                     ),
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                )
+
+            if "permalink" in frontmatter:
+                self.__fail(
+                    message=(
+                        f"{post_file}: Permalinks are not allowed for posts/drafts."
+                    ),
+                    exit_code=FloresErrorCode.GENERAL_ERROR,
                 )
 
             categories = frontmatter.pop("categories", [])
@@ -1077,8 +1179,8 @@ class Generator:
             filename_month = post_name_elements.pop(0)
             filename_day = post_name_elements.pop(0)
             name = "-".join(post_name_elements)
-            base_address = os.path.join(filename_year, filename_month, filename_day)
-            url = os.path.join("/", base_address, name)
+            base_address = "/".join([filename_year, filename_month, filename_day])
+            url = "/" + "/".join([base_address, name])
 
             time_string = frontmatter.pop("time", None)
             timezone_string = frontmatter.pop("timezone", None)
@@ -1117,13 +1219,17 @@ class Generator:
                     exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
                 )
 
+            # On Windows, removing 0-padding is done with #, not -.
+            no_pad_character = "-"
+            if sys.platform == "win32":  # pragma: no cover
+                no_pad_character = "#"
             post_date_info = PostDateInfo(
                 year=date.strftime("%Y"),
-                month=date.strftime("%-m"),
+                month=date.strftime(f"%{no_pad_character}m"),
                 month_padded=date.strftime("%m"),
                 month_name=date.strftime("%B"),
                 month_name_short=date.strftime("%b"),
-                day=date.strftime("%-d"),
+                day=date.strftime(f"%{no_pad_character}d"),
                 day_padded=date.strftime("%d"),
                 day_name=date.strftime("%A"),
                 day_name_short=date.strftime("%a"),
@@ -1212,7 +1318,7 @@ class Generator:
 
                 if "template" not in frontmatter:
                     self.__fail(
-                        f"{file}: Missing 'template' key in frontmatter.",
+                        message=f"{file}: Missing 'template' key in frontmatter.",
                         exit_code=FloresErrorCode.MISSING_ELEMENT,
                     )
 
@@ -1224,6 +1330,14 @@ class Generator:
                             "'template'."
                         ),
                         exit_code=FloresErrorCode.WRONG_TYPE_OR_FORMAT,
+                    )
+
+                if "permalink" in frontmatter:
+                    self.__fail(
+                        message=(
+                            f"{file}: Permalinks are not allowed for user data pages."
+                        ),
+                        exit_code=FloresErrorCode.GENERAL_ERROR,
                     )
 
                 page_data = frontmatter
@@ -1391,6 +1505,113 @@ class Generator:
         if os.path.isdir(self.build_dir):
             shutil.rmtree(self.build_dir)
 
+    def __render_page_to_file(
+        self,
+        page: Union[Page, Post],
+        templates: list[jinja2.Template],
+        site_data: dict[Any, Any],
+        filepath: str,
+    ) -> None:
+        """Render a given page to an HTML file.
+
+        Given a page or a post, render it using its template, render the Markdown of the
+        resulting page and produce a final HTML page. Finally, save that page to a file.
+
+        :param page: the page object to render.
+        :param templates: the available templates.
+        :param site_data: the dictionary containing all of the site data to be fed to
+            the page.
+        :param filepath: the path to the final HTML file, relative to the root of the
+            final site.
+        """
+        # Make sure a template exists for this page.
+        page_templates = [
+            template
+            for template in templates
+            if self.__split_filepath_elements(template.name)[1] == page["template"]
+        ]
+        if not page_templates:
+            self.__fail(
+                message=(
+                    f"{page['source_file']}: Template '{page['template']}' not "
+                    f"found in {self.templates_dir}."
+                ),
+                exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
+            )
+
+        template = page_templates[0]
+
+        # Given that the user can embed Jinja statements, variables etc in their
+        # Markdown (e.g. {% for post in site.posts %}), we need to first render
+        # those out.
+        try:
+            flat_page_content = self.jinja_env.from_string(page["content"]).render(
+                site=site_data, page=page
+            )
+        # Use generic `Exception` here instead of `jinja2.exceptions.TemplateError`
+        # because the templates might contain actual Python errors, such as
+        # `ValueError`, which will not be caught otherwise.
+        # See https://github.com/kokkonisd/flores/issues/14.
+        except Exception as e:
+            message = getattr(e, "message", str(e)).rstrip(".")
+            self.__fail(
+                message=f"{page['source_file']}: {message}.",
+                exit_code=FloresErrorCode.TEMPLATE_ERROR,
+            )
+        # Now that the Markdown file is "flat" (i.e. it doesn't contain any Jinja
+        # statements, variables etc), we can actually render the Markdown itself.
+        page["content"] = self.__render_markdown(flat_page_content)
+
+        try:
+            final_page_render = template.render(site=site_data, page=page)
+        # Use generic `Exception` here instead of `jinja2.exceptions.TemplateError`
+        # because the templates might contain actual Python errors, such as
+        # `ValueError`, which will not be caught otherwise.
+        # See https://github.com/kokkonisd/flores/issues/14.
+        except Exception as e:
+            filename = getattr(e, "filename", template.filename)
+            lineno = getattr(e, "lineno", "?")
+            message = getattr(e, "message", str(e)).rstrip(".")
+            self.__fail(
+                message=(
+                    f"{filename}:{lineno} (from {page['source_file']}): {message}."
+                ),
+                exit_code=FloresErrorCode.TEMPLATE_ERROR,
+            )
+
+        full_page_path = os.path.join(self.build_dir, filepath)
+        page_parent_dir, page_name, _ = self.__split_filepath_elements(full_page_path)
+
+        # Make sure the directories needed for the full path exist.
+        os.makedirs(page_parent_dir, exist_ok=True)
+
+        # For a given page `/foo/bar/baz.html`, we need to make sure that all of the
+        # following URLs will render the same page:
+        # - `/foo/bar/baz.html`
+        # - `/foo/bar/baz`
+        # - `/foo/bar/baz/`
+        #
+        # The first one is handled by directly providing that HTML file. The second one
+        # is thankfully given for free by virtue of how the server handles requests (if
+        # it fails to find a file, it will check if the file in the request plus '.html'
+        # corresponds to a file). The third one we need to build, by creating that
+        # directory and putting an `index.html` file in it, meaning
+        # `/foo/bar/baz/index.html`.
+        with open(full_page_path, "w") as html_file:
+            html_file.write(final_page_render)
+
+        # This refers to the third case listed above; make sure that we do not implement
+        # this behavior for special pages (e.g. the main index page), because then it
+        # will look like this:
+        # - `/index.html`
+        # - `/`
+        # - `/index/`
+        if filepath not in ("index.html", "404.html"):
+            page_slash_path = os.path.join(page_parent_dir, page_name)
+            os.makedirs(page_slash_path, exist_ok=True)
+            with open(os.path.join(page_slash_path, "index.html"), "w") as html_file:
+                html_file.write(final_page_render)
+
     def build(
         self,
         include_drafts: bool = False,
@@ -1408,6 +1629,9 @@ class Generator:
             f"Building static site from project directory '{self.project_dir}'..."
         )
         start_build_time = time.time()
+
+        # Force a reload of the configuration file.
+        self.__load_config()
 
         # Purge any previous builds and start from scratch.
         self.clean()
@@ -1440,179 +1664,48 @@ class Generator:
             "config": self.config,
         }
 
+        # Since pages can have permalinks, it's useful to check if there are conflicting
+        # ones and report it as a warning.
+        existing_permalinks: dict[str, Page] = {}
         for page in pages:
-            page_templates = [
-                template
-                for template in templates
-                if self.__split_filepath_elements(template.name)[1] == page["template"]
-            ]
-            if not page_templates:
-                self.__fail(
-                    message=(
-                        f"{page['source_file']}: Template '{page['template']}' not "
-                        f"found in {self.templates_dir}."
-                    ),
-                    exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
+            if page["permalink"] in existing_permalinks:
+                self.__log.warning(
+                    f"Pages {page['source_file']} and "
+                    f"{existing_permalinks[page['permalink']]['source_file']} have "
+                    "conflicting permalinks (the first will overwrite the second)."
                 )
+            else:
+                existing_permalinks[page["permalink"]] = page
 
-            template = page_templates[0]
-
-            # Given that the user can embed Jinja statements, variables etc in their
-            # markdown (e.g. {% for post in site.posts %}), we need to first render
-            # those out.
-            try:
-                flat_page_content = self.jinja_env.from_string(page["content"]).render(
-                    site=site_data, page=page
-                )
-            except jinja2.exceptions.TemplateError as e:
-                self.__fail(
-                    f"{page['source_file']}: {e.message.rstrip('.')}.",
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-            # Now that the markdown file is "flat" (i.e. it doesn't contain any Jinja
-            # statements, variables etc), we can actually render the markdown.
-            page["content"] = self.__render_markdown(flat_page_content)
-
-            with open(
-                os.path.join(self.build_dir, f"{page['name']}.html"), "w"
-            ) as html_file:
-                try:
-                    html_file.write(template.render(site=site_data, page=page))
-                except jinja2.exceptions.TemplateError as e:
-                    filename = getattr(e, "filename", template.filename)
-                    lineno = getattr(e, "lineno", "?")
-                    self.__fail(
-                        message=(
-                            f"{filename}:{lineno} (from {page['source_file']}): "
-                            f"{e.message.rstrip('.')}."
-                        ),
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
+            self.__render_page_to_file(
+                page=page,
+                templates=templates,
+                site_data=site_data,
+                filepath=f"{page['permalink']}.html",
+            )
 
         # Render the posts.
         for post in posts:
-            # We first need to create the hierarchy to display the posts. The posts will
-            # be stored in folders in the following fashion:
-            # 'YYYY-MM-DD-post-title-here.md' -> YYYY/MM/DD/post-title-here.html
-            os.makedirs(
-                os.path.join(self.build_dir, post["base_address"]), exist_ok=True
+            self.__render_page_to_file(
+                page=post,
+                templates=templates,
+                site_data=site_data,
+                filepath=os.path.join(post["base_address"], f"{post['name']}.html"),
             )
-
-            post_templates = [
-                template
-                for template in templates
-                if self.__split_filepath_elements(template.name)[1] == post["template"]
-            ]
-            if not post_templates:
-                self.__fail(
-                    message=(
-                        f"{post['source_file']}: Template '{post['template']}' not "
-                        f"found in {self.templates_dir}."
-                    ),
-                    exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
-                )
-
-            template = post_templates[0]
-
-            # Given that the user can embed Jinja statements, variables etc in their
-            # markdown (e.g. {% for post in site.posts %}), we need to first render
-            # those out.
-            try:
-                flat_post_content = self.jinja_env.from_string(post["content"]).render(
-                    site=site_data, page=post
-                )
-            except jinja2.exceptions.TemplateError as e:
-                self.__fail(
-                    f"{post['source_file']}: {e.message.rstrip('.')}.",
-                    exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                )
-            # Now that the markdown file is "flat" (i.e. it doesn't contain any Jinja
-            # statements, variables etc), we can actually render the markdown.
-            post["content"] = self.__render_markdown(flat_post_content)
-
-            with open(
-                os.path.join(
-                    self.build_dir, post["base_address"], f"{post['name']}.html"
-                ),
-                "w",
-            ) as final_post_file:
-                try:
-                    final_post_file.write(template.render(site=site_data, page=post))
-                except jinja2.exceptions.TemplateError as e:
-                    filename = getattr(e, "filename", template.filename)
-                    lineno = getattr(e, "lineno", "?")
-                    self.__fail(
-                        message=(
-                            f"{filename}:{lineno} (from {post['source_file']}): "
-                            f"{e.message.rstrip('.')}."
-                        ),
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
 
         # Render the custom user pages.
         for data_page_category in user_data_pages:
-            # First, create a directory to host the pages. For example, if this data
-            # is projects, we will make a "projects" dir and then host the pages inside
-            # it: "projects/my_project.html", "projects/another_project.html" etc.
-            os.makedirs(os.path.join(self.build_dir, data_page_category))
-
             for data_page in user_data_pages[data_page_category]:
-                data_page_templates = [
-                    template
-                    for template in templates
-                    if self.__split_filepath_elements(template.name)[1]
-                    == data_page["template"]
-                ]
-                if not data_page_templates:
-                    self.__fail(
-                        message=(
-                            f"{data_page['source_file']}: Template "
-                            f"'{data_page['template']}' not found in "
-                            f"{self.templates_dir}."
-                        ),
-                        exit_code=FloresErrorCode.FILE_OR_DIR_NOT_FOUND,
-                    )
-
-                template = data_page_templates[0]
-
-                # Given that the user can embed Jinja statements, variables etc in their
-                # markdown (e.g. {% for post in site.posts %}), we need to first render
-                # those out.
-                try:
-                    flat_data_page_content = self.jinja_env.from_string(
-                        data_page["content"]
-                    ).render(site=site_data, page=data_page)
-                except jinja2.exceptions.TemplateError as e:
-                    self.__fail(
-                        f"{data_page['source_file']}: {e.message.rstrip('.')}.",
-                        exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                    )
-                # Now that the markdown file is "flat" (i.e. it doesn't contain any
-                # Jinja statements, variables etc), we can actually render the markdown.
-                data_page["content"] = self.__render_markdown(flat_data_page_content)
-
-                with open(
-                    os.path.join(
-                        self.build_dir, data_page_category, f"{data_page['name']}.html"
+                self.__render_page_to_file(
+                    page=data_page,
+                    templates=templates,
+                    site_data=site_data,
+                    filepath=os.path.join(
+                        data_page_category, f"{data_page['name']}.html"
                     ),
-                    "w",
-                ) as final_data_page_file:
-                    try:
-                        final_data_page_file.write(
-                            template.render(site=site_data, page=data_page)
-                        )
-                    except jinja2.exceptions.TemplateError as e:
-                        filename = getattr(e, "filename", template.filename)
-                        lineno = getattr(e, "lineno", "?")
-                        self.__fail(
-                            message=(
-                                f"{filename}:{lineno} "
-                                f"(from {data_page['source_file']}): "
-                                f"{e.message.rstrip('.')}."
-                            ),
-                            exit_code=FloresErrorCode.TEMPLATE_ERROR,
-                        )
+                )
 
+        # Build the stylesheets.
         if os.path.isdir(self.stylesheets_dir):
             try:
                 sass.compile(
@@ -1644,11 +1737,13 @@ class Generator:
                 # Use shutil.copy2() here to copy file permissions, as well as metadata.
                 shutil.copy2(pure_css_file, destination_file)
 
+        # Build the JavaScript files.
         if os.path.isdir(self.javascript_dir):
             # Copy the entire JS dir into the build directory, preserving its
             # structure.
             shutil.copytree(self.javascript_dir, self.javascript_build_dir)
 
+        # Build the assets.
         if os.path.isdir(self.assets_dir):
             # Copy the entire assets dir into the build directory, preserving its
             # structure.

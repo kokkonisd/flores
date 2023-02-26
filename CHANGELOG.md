@@ -3,6 +3,15 @@
 This file tracks changes between different releases.
 
 
+## 0.2.0
+
+- Add support for Windows
+- Switch to `pyproject.toml`
+- Add support for permalinks for pages ([#16][i16])
+- Add support for slashes at the end of URLs ([#15][i15])
+- Fix handling of generic errors in templates ([#14][i14])
+
+
 ## 0.1.2
 
 - Fix generator/server not handling Sass/SCSS compilation errors ([#11][i11])
@@ -34,3 +43,6 @@ First (not-stable-yet) release of Flores.
 [i10]: https://github.com/kokkonisd/flores/issues/10
 [i11]: https://github.com/kokkonisd/flores/issues/11
 [i12]: https://github.com/kokkonisd/flores/issues/12
+[i14]: https://github.com/kokkonisd/flores/issues/14
+[i15]: https://github.com/kokkonisd/flores/issues/15
+[i16]: https://github.com/kokkonisd/flores/issues/16
