@@ -76,15 +76,23 @@ def test_basic_optimization(test_data_dir: str) -> None:
 
 
 def test_disable_processing(test_data_dir: str) -> None:
-    """Attempt to build images while deactivating image builds.
+    """Attempt to build images while deactivating image processing.
 
     We expect to simply have direct copies of the original images if the image builds
     are deactivated (regardless of the configuration of the optimization).
     """
-    generator = Generator(os.path.join(test_data_dir, "basic_optimization"))
-    generator.build(disable_image_build=True)
+    generator = Generator(os.path.join(test_data_dir, "full_optimization"))
+    generator.build(disable_image_processing=True)
 
-    expected_elements = [generator.assets_build_dir]
+    expected_elements = [
+        generator.assets_build_dir,
+        os.path.join(generator.assets_build_dir, "sea-large.jpg"),
+        os.path.join(generator.assets_build_dir, "sea-medium.jpg"),
+        os.path.join(generator.assets_build_dir, "sea-small.jpg"),
+        os.path.join(generator.assets_build_dir, "vases-large.png"),
+        os.path.join(generator.assets_build_dir, "vases-medium.png"),
+        os.path.join(generator.assets_build_dir, "vases-small.png"),
+    ]
 
     all_elements = []
     for dirpath, dirnames, filenames in os.walk(generator.build_dir):
@@ -92,6 +100,19 @@ def test_disable_processing(test_data_dir: str) -> None:
             all_elements.append(os.path.join(dirpath, element))
 
     assert sorted(all_elements) == sorted(expected_elements)
+
+    # Since there is no image processing, all generated images should be the same size.
+    for image, extension in (("sea", "jpg"), ("vases", "png")):
+        assert os.path.getsize(
+            os.path.join(generator.assets_build_dir, f"{image}-large.{extension}")
+        ) == os.path.getsize(
+            os.path.join(generator.assets_build_dir, f"{image}-medium.{extension}")
+        )
+        assert os.path.getsize(
+            os.path.join(generator.assets_build_dir, f"{image}-medium.{extension}")
+        ) == os.path.getsize(
+            os.path.join(generator.assets_build_dir, f"{image}-small.{extension}")
+        )
 
 
 def test_full_optimization(test_data_dir: str) -> None:

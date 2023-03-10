@@ -40,6 +40,7 @@ def build_cmd(args: argparse.Namespace) -> None:
     )
     generator.build(
         include_drafts=args.drafts,
+        disable_image_processing=args.no_image_processing,
     )
 
 
@@ -63,7 +64,7 @@ def serve_cmd(args: argparse.Namespace) -> None:
     )
     server.serve(
         include_drafts=args.drafts,
-        disable_image_rebuild=args.disable_image_rebuild,
+        disable_image_processing=args.no_image_processing,
         auto_rebuild=args.auto_rebuild,
     )
 
@@ -78,6 +79,12 @@ def __add_common_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "-d", "--drafts", help="Include drafts in the site.", action="store_true"
+    )
+    parser.add_argument(
+        "-I",
+        "--no-image-processing",
+        help="Do not optimize/resize images to improve build times.",
+        action="store_true",
     )
 
     logging_group = parser.add_argument_group("logging")
@@ -155,18 +162,10 @@ def main() -> None:
         help="The port to serve the site on.",
         type=int,
     )
-
-    rebuild_group = serve_subparser.add_argument_group("auto-rebuild")
-    rebuild_group.add_argument(
+    serve_subparser.add_argument(
         "-r",
         "--auto-rebuild",
         help="Rebuild any time a file changes.",
-        action="store_true",
-    )
-    rebuild_group.add_argument(
-        "-I",
-        "--disable-image-rebuild",
-        help="Do not rebuild images to accelerate rebuilds.",
         action="store_true",
     )
     serve_subparser.set_defaults(func=serve_cmd)

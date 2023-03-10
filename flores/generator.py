@@ -1410,13 +1410,15 @@ class Generator:
 
         return resources
 
-    def build_images(self) -> None:
+    def build_images(self, disable_image_processing: bool) -> None:
         """Build the final images.
 
         Starting from the original images of the site, build the final images based on
         the configuration of the site. The user can specify different sizes,
         optimization etc in the configuration of the site, so multiple images can be
         generated from one base image.
+
+        :param disable_image_processing: if True, do not process images, to save time.
         """
         image_files = self.collect_images()
         image_configs = self.__get_image_configs()
@@ -1449,7 +1451,7 @@ class Generator:
 
                 # If the size factor is 1 and optimization is disabled, there are no
                 # modifications to make to this image; just copy it over.
-                if size_factor == 1 and not optimize:
+                if size_factor == 1 and not optimize or disable_image_processing:
                     self.__log.debug(f"Copying image '{source_file}'...")
                     shutil.copy2(source_file, dest_file)
                     self.__log.debug(f"Image '{source_file}' copied to '{dest_file}'.")
@@ -1615,15 +1617,16 @@ class Generator:
     def build(
         self,
         include_drafts: bool = False,
-        disable_image_build: bool = False,
+        disable_image_processing: bool = False,
     ) -> None:
         """Build the final site.
 
         Use all of the resources of the project to build the actual site.
 
         :param include_drafts: if True, include drafts along with posts.
-        :param disable_image_build: if True, do not build images. This can be used to
-            speed up consecutive site builds, when there are a lot of generated images.
+        :param disable_image_processing: if True, do not optimize/resize images. This
+            can be used to speed up consecutive site builds, when there are a lot of
+            generated images.
         """
         self.__log.info(
             f"Building static site from project directory '{self.project_dir}'..."
@@ -1757,8 +1760,7 @@ class Generator:
             ):
                 os.remove(image_file)
 
-        if not disable_image_build:
-            self.build_images()
+        self.build_images(disable_image_processing=disable_image_processing)
 
         stop_build_time = time.time()
         self.__log.info(

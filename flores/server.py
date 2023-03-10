@@ -180,13 +180,13 @@ class Server:
     def serve(
         self,
         include_drafts: bool = False,
-        disable_image_rebuild: bool = False,
+        disable_image_processing: bool = False,
         auto_rebuild: bool = False,
     ) -> None:
         """Serve the site.
 
         :param include_drafts: if True, include the drafts in the site.
-        :param disable_image_rebuild: if True, do not rebuild images.
+        :param disable_image_processing: if True, do not optimize/resize images.
         :param auto_rebuild: if True, monitor site resources for changes and rebuild
             automatically when a change is detected.
         """
@@ -196,7 +196,10 @@ class Server:
         # If the site cannot build to start with, there is no point in attempting to
         # serve it.
         try:
-            self.generator.build(include_drafts=include_drafts)
+            self.generator.build(
+                include_drafts=include_drafts,
+                disable_image_processing=disable_image_processing,
+            )
         except FloresError:
             self.__log.critical("Failed to build site; nothing to serve.")
             sys.exit(1)
@@ -232,7 +235,7 @@ class Server:
                         try:
                             self.generator.build(
                                 include_drafts=include_drafts,
-                                disable_image_build=disable_image_rebuild,
+                                disable_image_processing=disable_image_processing,
                             )
                         except FloresError:
                             self.__log.warning("Failed to rebuild site.")

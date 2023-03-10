@@ -35,8 +35,8 @@ def flores_server(test_data_dir: str, request: typing.Any) -> typing.Generator:
     kwargs = {}
     if marker is not None:
         kwargs["include_drafts"] = marker.kwargs.get("include_drafts", False)
-        kwargs["disable_image_rebuild"] = marker.kwargs.get(
-            "disable_image_rebuild", False
+        kwargs["disable_image_processing"] = marker.kwargs.get(
+            "disable_image_processing", False
         )
         kwargs["auto_rebuild"] = marker.kwargs.get("auto_rebuild", False)
 

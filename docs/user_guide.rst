@@ -633,14 +633,14 @@ or ``serve`` subcommands. This can be achieved through the ``-r/--auto-rebuild``
 
 However, if a lot of images are treated during the build (see :ref:`image optimization
 <Images>`) this might make the refresh rate drop a lot. To avoid this, you can supply
-the ``-I/--disable-image-rebuild`` option, which avoids rebuilding images:
+the ``-I/--no-image-processing`` option, which avoids processing images:
 
 .. code-block:: console
 
    $ flores serve -r -I
 
 
-The tradeoff here is a faster refresh rate for non-optimized images.
+The tradeoff here is a faster refresh rate for non-optimized, non-resized images.
 
 
 Other serve options

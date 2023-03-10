@@ -3,6 +3,11 @@
 This file tracks changes between different releases.
 
 
+## 0.3.0
+
+- Fix/redesign `-I` switch (now images simply do not get processed, just copied over)
+
+
 ## 0.2.0
 
 - Add support for Windows
