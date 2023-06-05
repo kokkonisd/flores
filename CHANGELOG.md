@@ -6,7 +6,7 @@ This file tracks changes between different releases.
 ## 0.3.0
 
 - Fix/redesign `-I` switch (now images simply do not get processed, just copied over)
-- Bump Python-Markdown & PyMdown Extensions to the most recent versions.
+- Bump Python-Markdown & PyMdown Extensions to the most recent versions
 
 
 ## 0.2.0
