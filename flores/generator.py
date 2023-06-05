@@ -679,17 +679,14 @@ class Generator:
                 element
                 for element in all_elements
                 if any(
-                    [
-                        os.path.basename(element).startswith(prefix)
-                        for prefix in prefixes
-                    ]
+                    os.path.basename(element).startswith(prefix) for prefix in prefixes
                 )
             ]
         if suffixes is not None:
             all_elements = [
                 element
                 for element in all_elements
-                if any([element.endswith(suffix) for suffix in suffixes])
+                if any(element.endswith(suffix) for suffix in suffixes)
             ]
 
         return all_elements
