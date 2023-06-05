@@ -149,11 +149,11 @@ class Generator:
     FRONTMATTER_REGEX = r"---\n(((?!---)[\s\S])*)\n?---"
 
     MD_EXTENSIONS = [
-        "pymdownx.tilde",
-        "pymdownx.emoji",
         "pymdownx.extra",
-        "codehilite",
+        "pymdownx.tilde",
+        "pymdownx.saneheaders",
         "fenced_code",
+        "codehilite",
     ]
 
     DEFAULT_CONFIG = {
