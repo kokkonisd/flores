@@ -5,6 +5,7 @@
 
 Yet another static site generator.
 
+**NOTE: Flores has been archived and is not receiving any new features or maintenance. It is being succeeded by [mrbones](https://github.com/kokkonisd/mrbones). The rationale behind this change can be found in this [blog post](https://kokkonisd.github.io/2025/02/22/mrbones).**
 
 ## Motivation
 
